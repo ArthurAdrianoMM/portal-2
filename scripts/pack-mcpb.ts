@@ -65,7 +65,7 @@ const npx = (...args: string[]) => execFileSync('npx', ['-y', MCPB, ...args], { 
 const out = join(ROOT, `${pkg.name}-${pkg.version}.mcpb`);
 const stage = mkdtempSync(join(tmpdir(), `${pkg.name}-mcpb-`));
 try {
-  // The server only: MCP clients never open the docs page.
+  // The server only: MCP clients never open the web app.
   const web = join(ROOT, 'dist', 'web');
   cpSync(join(ROOT, 'dist'), join(stage, 'dist'), {
     recursive: true,

@@ -1,14 +1,14 @@
 /**
- * Serves the docs page (built from web/ into dist/web) at /docs/. The page
- * only loads files from this server and only talks to this server.
+ * Serves the web app (built from web/ into dist/web) at /. The app only loads
+ * files from this server and only talks to this server.
  */
 import { readFile } from 'node:fs/promises';
 import { extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { Context, Hono, MiddlewareHandler } from 'hono';
+import type { Context, Hono } from 'hono';
 
 /** Resolves to <repo>/dist/web both from src/http (tsx) and from dist/http (built). */
-export const DEFAULT_DOCS_DIR = fileURLToPath(new URL('../../dist/web/', import.meta.url));
+export const DEFAULT_WEB_DIR = fileURLToPath(new URL('../../dist/web/', import.meta.url));
 
 const CONTENT_SECURITY_POLICY = [
   "default-src 'none'",
@@ -32,26 +32,20 @@ const CONTENT_TYPES: Record<string, string> = {
   '.webp': 'image/webp',
   '.woff2': 'font/woff2',
   '.woff': 'font/woff',
-  '.map': 'application/json; charset=utf-8',
 };
 
 const NOT_BUILT = `<!doctype html>
 <html lang="pt-BR"><meta charset="utf-8"><title>Portal 2</title>
-<p>A interface da documentação ainda não foi gerada. Rode <code>npm run build:web</code> e reinicie o servidor.</p>
-<p>A API e o <a href="/openapi.json">openapi.json</a> funcionam sem ela.</p>
+<p>A interface ainda não foi gerada. Rode <code>npm run build:web</code> e reinicie o servidor.</p>
+<p>A API e o <a href="/api/openapi.json">openapi.json</a> funcionam sem ela.</p>
 </html>
 `;
 
-const docsHeaders: MiddlewareHandler = async (c, next) => {
-  await next();
-  c.header('Content-Security-Policy', CONTENT_SECURITY_POLICY);
-};
-
-/** The file a /docs/ path names, or null when it would leave the docs folder. */
-function resolveDocsFile(root: string, requestPath: string): string | null {
+/** The file a path names (`/` is index.html), or null when it would leave the folder. */
+function resolveWebFile(root: string, requestPath: string): string | null {
   let relative: string;
   try {
-    relative = decodeURIComponent(requestPath.replace(/^\/docs\/?/, ''));
+    relative = decodeURIComponent(requestPath.replace(/^\//, ''));
   } catch {
     return null;
   }
@@ -60,7 +54,7 @@ function resolveDocsFile(root: string, requestPath: string): string | null {
   return file.startsWith(root.endsWith(sep) ? root : root + sep) ? file : null;
 }
 
-async function sendFile(c: Context, file: string) {
+async function sendWebFile(c: Context, file: string) {
   const type = CONTENT_TYPES[extname(file)];
   if (!type) return null;
   let body: Buffer;
@@ -71,21 +65,25 @@ async function sendFile(c: Context, file: string) {
   }
   // Files under assets/ have a content hash in their name, so they never change.
   const cache = file.includes(`${sep}assets${sep}`) ? 'public, max-age=31536000, immutable' : 'no-store';
-  return c.body(new Uint8Array(body), 200, { 'Content-Type': type, 'Cache-Control': cache });
+  return c.body(new Uint8Array(body), 200, {
+    'Content-Type': type,
+    'Cache-Control': cache,
+    'Content-Security-Policy': CONTENT_SECURITY_POLICY,
+  });
 }
 
-export function registerDocs(app: Hono, docsDir: string = DEFAULT_DOCS_DIR): void {
-  const root = resolve(docsDir);
+/** Register last: it answers GETs no other route took, and passes on the rest. */
+export function registerWebApp(app: Hono, webDir: string = DEFAULT_WEB_DIR): void {
+  const root = resolve(webDir);
 
-  app.use('/docs', docsHeaders);
-  app.use('/docs/*', docsHeaders);
-  app.get('/', (c) => c.redirect('/docs/'));
-  app.get('/docs', (c) => c.redirect('/docs/'));
-  app.get('/docs/*', async (c) => {
-    const file = resolveDocsFile(root, c.req.path);
-    const response = file ? await sendFile(c, file) : null;
+  // The page used to live at /docs/; its hash routes still work at /.
+  app.get('/docs', (c) => c.redirect('/'));
+  app.get('/docs/*', (c) => c.redirect('/'));
+  app.get('*', async (c, next) => {
+    const file = resolveWebFile(root, c.req.path);
+    const response = file ? await sendWebFile(c, file) : null;
     if (response) return response;
-    if (c.req.path === '/docs/') return c.html(NOT_BUILT, 503);
-    return c.notFound();
+    if (c.req.path === '/') return c.html(NOT_BUILT, 503, { 'Content-Security-Policy': CONTENT_SECURITY_POLICY });
+    await next();
   });
 }

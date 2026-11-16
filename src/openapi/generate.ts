@@ -8,7 +8,7 @@ import { ERROR_DESCRIPTIONS, ERROR_STATUS, apiErrorSchema, type ApiErrorCode } f
 import { TAGS, operations as allOperations, isFileOperation, type Callout, type Operation } from '../operations/index.js';
 import { VERSION } from '../version.js';
 
-export const DEFAULT_SERVER_URL = 'http://127.0.0.1:4321';
+export const DEFAULT_SERVER_URL = 'http://127.0.0.1:4321/api';
 export const SECURITY_SCHEME = 'tokenLocal';
 
 export type OpenApiDocument = Record<string, unknown>;
@@ -23,9 +23,9 @@ export interface OpenApiOptions {
 const API_DESCRIPTION = [
   'API somente leitura para os seus dados do Portal do Aluno do SENAI. Ela roda no seu computador ' +
     '(`portal-2 serve`) e fala com o portal usando a sua conta. Nenhum outro servidor participa.',
-  '**Autenticação:** entre com o usuário e a senha do portal na documentação (`/docs/`), ou envie ' +
-    '`POST /sessao` com `{"usuario", "senha"}` em JSON. A resposta traz um token; envie-o como ' +
-    '`Authorization: Bearer <token>`. Um novo login invalida o token anterior.',
+  '**Autenticação:** entre com o usuário e a senha do portal na interface, ou envie `POST /sessao` com ' +
+    '`{"usuario", "senha"}` em JSON (e `"lembrar": true` para a sessão durar 30 dias). A resposta traz um ' +
+    'token; envie-o como `Authorization: Bearer <token>`. Cada login abre uma sessão; `DELETE /sessao` a encerra.',
 ].join('\n\n');
 
 /** Errors any operation can return, besides the portal's. */
@@ -135,7 +135,7 @@ export function generateOpenApi(options: OpenApiOptions = {}): OpenApiDocument {
       description: API_DESCRIPTION,
       'x-portal': { url: options.portalUrl ?? DEFAULT_CONFIG.baseUrl },
     },
-    servers: [{ url: options.serverUrl ?? DEFAULT_SERVER_URL, description: 'Servidor local (`portal-2 serve`)' }],
+    servers: [{ url: options.serverUrl ?? DEFAULT_SERVER_URL, description: 'O servidor `portal-2 serve`' }],
     security: [{ [SECURITY_SCHEME]: [] }],
     tags: TAGS.filter((tag) => usedTags.has(tag.name)).map((tag) => ({ name: tag.name, description: tag.description })),
     paths,
@@ -144,7 +144,7 @@ export function generateOpenApi(options: OpenApiOptions = {}): OpenApiDocument {
         [SECURITY_SCHEME]: {
           type: 'http',
           scheme: 'bearer',
-          description: 'Token do login atual, devolvido por `POST /sessao`.',
+          description: 'Token de uma sessão, devolvido por `POST /sessao`.',
         },
       },
       schemas: { Erro: jsonSchema(apiErrorSchema, 'output') },
