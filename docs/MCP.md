@@ -11,7 +11,7 @@ The MCP server should be:
 - **Easy to install.** One command, or one double-click in Claude Desktop. Nothing to clone or build, and no server to keep running.
 - **Easy to use.** It always starts. Setup mistakes (a missing variable, a wrong password) reach the chat as messages the model can explain, never as an unexplained "server failed to connect".
 - **Robust.** Inputs and outputs are validated. Portal failures come back as stable error codes. A wrong password is never sent to the portal over and over.
-- **Easy to maintain.** No code per tool. An operation added to `src/operations` becomes an HTTP route, an OpenAPI entry, a docs page section and an MCP tool at once.
+- **Easy to maintain.** No code per tool. An operation added to `src/operations` becomes an HTTP route, an OpenAPI entry, a web app section and an MCP tool at once.
 - **Ready for remote.** A remote server, later, is a new entry point, not a refactor.
 
 ## Standards it follows
@@ -34,9 +34,9 @@ The MCP server should be:
                      └──────────────▲───────────────────────────┘
                                     │ session: () => Promise<PortalSession>
          ┌──────────────────────────┼───────────────────────────────┐
-  Phase 1: stdio             Phase 2: /mcp on serve          Later: remote
-  envSession(env)            login.sessionFor(bearer)        sessions.forUser(oauth.sub)
-  serveStdio(factory)        createMcpHandler(factory)       createMcpHandler + OAuth
+  Phase 1: stdio             Phase 2: /mcp on serve          Hosted: the same serve
+  envSession(env)            sessions.resolve(token)         + OAuth handing out tokens
+  serveStdio(factory)        createMcpHandler(factory)       (docs/HOSTING.md, step 3)
 ```
 
 ### The session is passed in
@@ -46,8 +46,8 @@ The MCP server should be:
 | Transport | Resolver |
 |---|---|
 | stdio (phase 1) | The one session made from `PORTAL_ALUNO_USER` and `PORTAL_ALUNO_PASSWORD`. |
-| `/mcp` on `serve` (phase 2) | The session behind the request's bearer token: `LocalLogin.sessionFor(token)`, the same lookup the REST routes use. |
-| Remote (later) | The session of the user named by the OAuth token. |
+| `/mcp` on `serve` (phase 2) | The session of the request's token: `sessions.resolve(token)`, the same lookup the API routes use. |
+| Hosted (later) | The same: OAuth only hands out ordinary session tokens ([HOSTING.md](HOSTING.md)). |
 
 The SDK's HTTP handler builds a fresh `McpServer` per request from a factory, so the factory's closure captures that request's identity. `createMcpServer` stays the same in all three.
 
@@ -128,15 +128,13 @@ test/mcp.test.ts
 4. The npm package (`npx -y portal-2@latest mcp`), and setup per client in the README. Releases are published from a version tag by CI: [RELEASING.md](RELEASING.md).
 5. A `.mcpb` bundle for Claude Desktop (`npm run pack:mcpb`, manifest version 0.4, attached to every GitHub Release), where the password is typed into a form and kept by Claude Desktop in secure storage. The manifest is generated from `package.json` and the operations, so it can't fall behind. Claude Desktop ships Node.js, so users install nothing else.
 
-### Phase 2: `/mcp` on the local server
+### Phase 2: `/mcp` on `serve` (done)
 
-`serve` mounts `/mcp` (Streamable HTTP, stateless) behind its existing protections: Host check, bearer token, `127.0.0.1` only. The resolver is `login.sessionFor(token)`. Clients that prefer HTTP use the session opened on the docs page. This is still local, so it does not reach ChatGPT on the web.
+`serve` answers MCP at `/mcp` (Streamable HTTP, stateless) behind the same protections as the API: the Host check, the Origin check, and a session. The route checks the token (`401 token_invalido` without one, before anything reaches the portal); then each request's server resolves the session from it with `sessions.resolve(token)`. Clients send the token of a session opened on the web app, usually a remembered one, which lasts 30 days. Tested with 2025-era clients and clients pinned to 2026-07-28.
 
-### Later: remote
+### Later: hosted
 
-A new entry point (`src/remote/main.ts`): OAuth verification in front of the SDK's HTTP handler, and a resolver that keeps one `PortalSession` per user, with idle eviction. Nothing in `src/mcp` changes.
-
-The hard part is not code. The portal has no OAuth of its own, so a remote server would hold other students' portal passwords. That is a change to INTENT.md and needs its own decision before any of this is built.
+Not a separate server: the same `serve`, configured for an address on the internet, plus OAuth for the clients that can't send a header (Claude.ai, ChatGPT). OAuth ends on the same login page and hands out an ordinary session token, so nothing in `src/mcp` changes. The design and its steps are in [HOSTING.md](HOSTING.md).
 
 ## Credentials
 
@@ -146,7 +144,7 @@ The MCP Inspector saves the `env` values of the stdio servers it runs. Use it wi
 
 ## Why this design
 
-- **No per-tool code.** The operation definitions stay the single source of truth for REST, OpenAPI, the docs page and MCP, so the four can't drift apart.
+- **No per-tool code.** The operation definitions stay the single source of truth for REST, OpenAPI, the web app and MCP, so the four can't drift apart.
 - **The core knows no transport.** Env vars, tokens and OAuth live only in the entry points, and each is a few dozen lines.
 - **Pure functions where it matters.** `tools.ts` and `results.ts` are tested without a transport.
 - **Double validation.** `runOperation` checks against the Zod schema and the SDK checks against `outputSchema`, so a change in the portal becomes `resposta_inesperada`, not wrong data.
