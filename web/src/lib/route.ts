@@ -1,4 +1,4 @@
-/** Hash routes of the docs page. */
+/** Hash routes of the web app. */
 
 /** `entrar` is the login screen; `voltar` is the page to return to afterwards. */
 export type Route = { kind: 'inicio' } | { kind: 'operacao'; id: string } | { kind: 'entrar'; voltar: string };

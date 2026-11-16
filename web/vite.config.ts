@@ -7,16 +7,16 @@ const API_TARGET = 'http://127.0.0.1:4321';
 
 export default defineConfig({
   root: fileURLToPath(new URL('.', import.meta.url)),
-  // Served by the local server at /docs/ (src/http/docs.ts).
-  base: '/docs/',
+  // Served by the server at / (src/http/web.ts).
+  base: '/',
   plugins: [react()],
   build: {
     outDir: '../dist/web',
     emptyOutDir: true,
   },
   server: {
-    // Everything outside /docs/ is the API: forward it to the local server, which
-    // accepts a login only from its own origin.
-    proxy: { '^/(?!docs(/|$))': { target: API_TARGET, changeOrigin: true, headers: { origin: API_TARGET } } },
+    // The API, MCP and health live on the server: forward them. It accepts requests that change
+    // something only from its own origin, so the proxy presents that origin.
+    proxy: { '^/(api|mcp|health)(/|$)': { target: API_TARGET, changeOrigin: true, headers: { origin: API_TARGET } } },
   },
 });

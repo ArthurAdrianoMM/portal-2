@@ -15,7 +15,7 @@ const LOGIN_NEEDED: Partial<Record<ConnectionState, { title: string; text: strin
   },
   token_invalido: {
     title: 'Seu acesso não vale mais',
-    text: 'O servidor reiniciou ou você entrou em outra aba. Entre de novo para continuar testando.',
+    text: 'A sessão terminou ou o servidor reiniciou. Entre de novo para continuar testando.',
   },
   sessao_expirada: {
     title: 'A sessão no portal expirou',

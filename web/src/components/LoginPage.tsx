@@ -115,8 +115,8 @@ export function LoginPage({ title, version, connection, voltar }: LoginPageProps
                   <strong>Lembrar de mim</strong>
                   <span>
                     {remember
-                      ? 'Fica salvo neste navegador até o servidor reiniciar.'
-                      : 'Sem marcar, o acesso vale só nesta aba.'}
+                      ? 'Vale por 30 dias, mesmo depois que o servidor reiniciar. A senha fica salva, criptografada.'
+                      : 'Sem marcar, vale até você fechar o navegador ou o servidor reiniciar.'}
                   </span>
                 </span>
               </label>
@@ -145,7 +145,7 @@ export function LoginPage({ title, version, connection, voltar }: LoginPageProps
 
           <p className="login__note">
             <ShieldIcon size={18} />
-            <span>A senha vai deste computador direto para o portal e fica só na memória do servidor local. Nada é gravado em disco.</span>
+            <span>A senha vai daqui direto para o portal e fica na memória do servidor. Só é gravada com “Lembrar de mim”, criptografada com uma chave que só a sua sessão tem.</span>
           </p>
         </div>
       </main>

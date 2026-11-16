@@ -1,13 +1,17 @@
 /**
- * Browser-side state: the login and its token, the connection to the local
- * server and the hash route.
+ * Browser-side state: the session with the server, and the hash route.
+ *
+ * The session lives in an HttpOnly cookie the server sets at login, so the
+ * page never stores the token. It asks the server who is logged in, and gets
+ * the token back only to show it ("Copiar token") for scripts and MCP clients.
  */
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import { parseRoute, type Route } from './lib/route';
 
-// ── Token ───────────────────────────────────────────────────────────
+/** Where the server mounts the API (src/http/app.ts). */
+export const API = '/api';
 
-const TOKEN_KEY = 'portal-2-token';
+// ── Storage ─────────────────────────────────────────────────────────
 
 /** Storage can be blocked (private mode, settings); the page then works without remembering. */
 function storageGet(storage: () => Storage, key: string): string | null {
@@ -26,28 +30,30 @@ function storageSet(storage: () => Storage, key: string, value: string | null): 
   }
 }
 
-/** "Lembrar de mim" keeps the token in localStorage (this browser); otherwise it lives in sessionStorage (this tab). */
-function loadToken(): string {
-  return storageGet(() => localStorage, TOKEN_KEY) ?? storageGet(() => sessionStorage, TOKEN_KEY) ?? '';
+/** Earlier versions kept the token in the browser; the cookie replaced it. */
+function forgetStoredToken(): void {
+  storageSet(() => localStorage, 'portal-2-token', null);
+  storageSet(() => sessionStorage, 'portal-2-token', null);
 }
-function saveToken(token: string | null, remember = false): void {
-  storageSet(() => localStorage, TOKEN_KEY, remember ? token : null);
-  storageSet(() => sessionStorage, TOKEN_KEY, remember ? null : token);
-}
+
+// ── Link from the terminal ──────────────────────────────────────────
+
+/** A token from a link the terminal printed, waiting to become this browser's cookie. */
+let linkToken: string | null = null;
 
 /**
  * When the server logs in at startup, the terminal's link carries the token in
- * the hash (`#token=…`), which never reaches the server. Keep it for this tab
- * only and take it out of the address bar. Runs on load and on every hash
- * change: opening the link in a tab that already shows the page changes only the hash.
+ * the hash (`#token=…`), which never reaches the server. Take it out of the
+ * address bar and keep it until the server turns it into a cookie. Runs on
+ * load and on every hash change: opening the link in a tab that already shows
+ * the page changes only the hash.
  */
 export function captureTokenFromHash(): string | null {
   const match = /[#&]token=([^&]+)/.exec(location.hash);
   if (!match) return null;
-  const token = decodeURIComponent(match[1]!);
-  saveToken(token);
   history.replaceState(null, '', `${location.pathname}${location.search}#/`);
-  return token;
+  linkToken = decodeURIComponent(match[1]!);
+  return linkToken;
 }
 
 // ── Connection ──────────────────────────────────────────────────────
@@ -60,15 +66,18 @@ export type ConnectionState =
   | 'sessao_expirada'
   | 'somente_leitura';
 
+type Problem = 'token_invalido' | 'sessao_expirada';
+
 export interface Connection {
   state: ConnectionState;
+  /** The session's token, to copy into scripts and MCP clients. Empty without a session. */
   token: string;
-  /** The student's name, once the server confirmed the token. */
+  /** The student's name, once the server confirmed the session. */
   nome: string | null;
-  /** Logs in through the local server. Resolves to a message for the person, or null on success. */
+  /** Logs in through the server. Resolves to a message for the person, or null on success. */
   login: (usuario: string, senha: string, lembrar: boolean) => Promise<string | null>;
   logout: () => void;
-  /** Feeds the outcome of an API call back, so the page reflects token or session problems. */
+  /** Feeds the outcome of an API call back, so the page reflects session problems. */
   report: (errorCode: string | null) => void;
 }
 
@@ -80,6 +89,14 @@ interface ApiErrorBody {
   detalhes?: { mensagem: string }[];
 }
 
+interface SessionBody extends ApiErrorBody {
+  token?: string;
+  nome?: string;
+}
+
+/** What the server said about the session: who it is, why there is none, or nothing (it didn't answer). */
+type Answer = { who: { token: string; nome: string | null }; problem: null } | { who: null; problem: Problem | null } | null;
+
 const readJson = (res: Response): Promise<unknown> => res.json().catch(() => null);
 
 export function errorCodeOf(body: unknown): string | null {
@@ -89,22 +106,87 @@ export function errorCodeOf(body: unknown): string | null {
 function loginErrorMessage(body: ApiErrorBody | null, status: number): string {
   if (body?.erro === 'login_falhou') return 'O portal não aceitou o login. Confira o usuário e a senha e tente de novo.';
   if (body?.detalhes?.length) return body.detalhes.map((d) => d.mensagem).join(' ');
-  return body?.mensagem ?? `O servidor local respondeu HTTP ${status}.`;
+  return body?.mensagem ?? `O servidor respondeu HTTP ${status}.`;
 }
 
+/** Calls /api/sessao. `refused` is the problem to show when there is no session for a reason other than the portal. */
+async function askSession(init: RequestInit, refused: Problem | null): Promise<Answer> {
+  let res: Response;
+  try {
+    res = await fetch(`${API}/sessao`, { cache: 'no-store', ...init });
+  } catch {
+    return null;
+  }
+  const body = (await readJson(res)) as SessionBody | null;
+  if (res.ok && typeof body?.token === 'string') return { who: { token: body.token, nome: body.nome ?? null }, problem: null };
+  const code = errorCodeOf(body);
+  return { who: null, problem: code !== null && SESSION_ERRORS.has(code) ? 'sessao_expirada' : refused };
+}
+
+const postJson = (body: unknown): RequestInit => ({
+  method: 'POST',
+  headers: { 'content-type': 'application/json', accept: 'application/json' },
+  body: JSON.stringify(body),
+});
+
+/** Who is logged in, by the cookie. */
+const whoIsLoggedIn = () => askSession({}, null);
+
+/** Turns the token of a link from the terminal into this browser's cookie. */
+const exchangeLinkToken = (token: string) => askSession(postJson({ token }), 'token_invalido');
+
 export function useConnection(): Connection {
-  const [token, setToken] = useState(loadToken);
   const [serverUp, setServerUp] = useState<boolean | null>(null);
-  /** The token the server last confirmed, and whose name it is. */
-  const [confirmed, setConfirmed] = useState<{ token: string; nome: string | null } | null>(null);
-  const [problem, setProblem] = useState<'token_invalido' | 'sessao_expirada' | null>(null);
+  /** The session the server confirmed; undefined until it answered. */
+  const [who, setWho] = useState<{ token: string; nome: string | null } | null | undefined>(undefined);
+  const [problem, setProblem] = useState<Problem | null>(null);
+
+  const apply = useCallback((answer: Answer) => {
+    if (answer === null) return setServerUp(false);
+    setWho(answer.who);
+    setProblem(answer.problem);
+  }, []);
 
   useEffect(() => {
+    forgetStoredToken();
     // Only this page's own server answers /health. Anywhere else (a static copy), the page is read-only.
     fetch('/health', { cache: 'no-store' })
       .then((res) => setServerUp(res.ok))
       .catch(() => setServerUp(false));
   }, []);
+
+  // On load: the token of a link from the terminal, or else the cookie.
+  useEffect(() => {
+    if (!serverUp) return;
+    let cancelled = false;
+    const token = linkToken;
+    void (token ? exchangeLinkToken(token) : whoIsLoggedIn()).then((answer) => {
+      if (cancelled) return;
+      if (token === linkToken) linkToken = null;
+      apply(answer);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [serverUp, apply]);
+
+  // A link opened in this tab later, or a login or logout in another tab.
+  useEffect(() => {
+    if (!serverUp) return;
+    const onHashChange = () => {
+      const token = captureTokenFromHash();
+      if (!token) return;
+      linkToken = null;
+      void exchangeLinkToken(token).then(apply);
+    };
+    const onFocus = () => void whoIsLoggedIn().then(apply);
+    window.addEventListener('hashchange', onHashChange);
+    window.addEventListener('focus', onFocus);
+    return () => {
+      window.removeEventListener('hashchange', onHashChange);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [serverUp, apply]);
 
   const report = useCallback((errorCode: string | null) => {
     if (errorCode === 'token_invalido') setProblem('token_invalido');
@@ -112,84 +194,36 @@ export function useConnection(): Connection {
     else if (errorCode === null) setProblem(null);
   }, []);
 
-  const adopt = useCallback((value: string, nome: string | null = null) => {
-    setToken(value);
-    setConfirmed(nome === null ? null : { token: value, nome });
+  const login = useCallback(async (usuario: string, senha: string, lembrar: boolean) => {
+    let res: Response;
+    try {
+      res = await fetch(`${API}/sessao`, { ...postJson({ usuario, senha, lembrar }), cache: 'no-store' });
+    } catch {
+      return 'O servidor não respondeu. Ele ainda está rodando?';
+    }
+    const body = (await readJson(res)) as SessionBody | null;
+    if (!res.ok || typeof body?.token !== 'string') return loginErrorMessage(body, res.status);
+    setWho({ token: body.token, nome: body.nome ?? null });
     setProblem(null);
+    return null;
   }, []);
 
-  // A link from the terminal, or a login or logout in another tab ("Lembrar de mim").
-  useEffect(() => {
-    const onHashChange = () => {
-      const fromLink = captureTokenFromHash();
-      if (fromLink) adopt(fromLink);
-    };
-    const onStorage = (event: StorageEvent) => {
-      if (event.key === TOKEN_KEY) adopt(loadToken());
-    };
-    window.addEventListener('hashchange', onHashChange);
-    window.addEventListener('storage', onStorage);
-    return () => {
-      window.removeEventListener('hashchange', onHashChange);
-      window.removeEventListener('storage', onStorage);
-    };
-  }, [adopt]);
-
-  // A saved token may be from an earlier run of the server: ask the server whether it still works.
-  useEffect(() => {
-    if (!serverUp || !token || confirmed?.token === token) return;
-    let cancelled = false;
-    fetch('/sessao', { headers: { authorization: `Bearer ${token}` }, cache: 'no-store' })
-      .then(async (res) => {
-        const body = (await readJson(res)) as { nome?: string } | null;
-        if (cancelled) return;
-        setConfirmed({ token, nome: res.ok ? (body?.nome ?? null) : null });
-        report(res.ok ? null : (errorCodeOf(body) ?? 'token_invalido'));
-      })
-      .catch(() => setServerUp(false));
-    return () => {
-      cancelled = true;
-    };
-  }, [serverUp, token, confirmed, report]);
-
-  const login = useCallback(
-    async (usuario: string, senha: string, lembrar: boolean) => {
-      let res: Response;
-      try {
-        res = await fetch('/sessao', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json', accept: 'application/json' },
-          body: JSON.stringify({ usuario, senha }),
-          cache: 'no-store',
-        });
-      } catch {
-        return 'O servidor local não respondeu. Ele ainda está rodando no terminal?';
-      }
-      const body = (await readJson(res)) as (ApiErrorBody & { token?: string; nome?: string }) | null;
-      if (!res.ok || !body?.token) return loginErrorMessage(body, res.status);
-      saveToken(body.token, lembrar);
-      adopt(body.token, body.nome ?? null);
-      return null;
-    },
-    [adopt],
-  );
-
   const logout = useCallback(() => {
-    if (token) fetch('/sessao', { method: 'DELETE', headers: { authorization: `Bearer ${token}` } }).catch(() => {});
-    saveToken(null);
-    adopt('');
-  }, [token, adopt]);
+    fetch(`${API}/sessao`, { method: 'DELETE' }).catch(() => {});
+    setWho(null);
+    setProblem(null);
+  }, []);
 
   const state: ConnectionState =
     serverUp === null
       ? 'verificando'
       : !serverUp
         ? 'somente_leitura'
-        : !token
-          ? 'sem_token'
-          : (problem ?? (confirmed?.token === token ? 'conectado' : 'verificando'));
+        : who === undefined
+          ? 'verificando'
+          : (problem ?? (who ? 'conectado' : 'sem_token'));
 
-  return { state, token, nome: confirmed?.token === token ? confirmed.nome : null, login, logout, report };
+  return { state, token: who?.token ?? '', nome: who?.nome ?? null, login, logout, report };
 }
 
 // ── Route ───────────────────────────────────────────────────────────

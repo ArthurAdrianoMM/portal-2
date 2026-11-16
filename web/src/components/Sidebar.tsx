@@ -5,10 +5,10 @@ import { ChevronUpIcon, LockIcon } from './Icons';
 import { InlineText } from './Markdown';
 
 const SESSION_TEXT: Record<ConnectionState, string> = {
-  verificando: 'Verificando o servidor local…',
-  conectado: 'A sessão com o portal fica só na memória do servidor, no seu terminal. Ctrl+C lá encerra e apaga.',
+  verificando: 'Verificando o servidor…',
+  conectado: 'Sessão aberta. Sem “Lembrar de mim”, ela termina quando você sai ou o servidor reinicia.',
   sem_token: 'Você ainda não entrou. Dá para ler tudo; para testar com seus dados, entre com sua conta do portal.',
-  token_invalido: 'Seu acesso não vale mais: o servidor reiniciou ou você entrou em outra aba. Entre de novo.',
+  token_invalido: 'Sua sessão terminou: você saiu, ela expirou ou o servidor reiniciou. Entre de novo.',
   sessao_expirada: 'O portal encerrou a sessão e o servidor não conseguiu entrar de novo sozinho. Entre outra vez.',
   somente_leitura: 'Esta cópia não fala com o portal. Para testar com seus dados, rode `portal-2 serve` no seu computador.',
 };
@@ -115,7 +115,7 @@ export function Sidebar({ model, route, results, connection }: SidebarProps) {
       <div className="session-card">
         <span className="session-card__title">
           <LockIcon size={15} />
-          Sessão local
+          Sessão
         </span>
         <p>
           <InlineText text={SESSION_TEXT[connection]} />
