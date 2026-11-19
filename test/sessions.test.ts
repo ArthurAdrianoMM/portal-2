@@ -85,16 +85,23 @@ describe('sessions in memory', () => {
 });
 
 describe('remembered sessions', () => {
-  it('are saved readable by this user only, with no user or password in clear', async () => {
+  it('are saved with no user or password in clear', async () => {
     const { sessions, file } = setup();
     const { expires } = await sessions.login(CREDENTIALS, true);
 
     const text = readFileSync(file.path, 'utf8');
     expect(text).not.toContain(USER);
     expect(text).not.toContain(PASSWORD);
+    expect(Object.values(JSON.parse(text).sessions)).toEqual([{ digest: expect.any(String), credentials: expect.any(String), expires }]);
+  });
+
+  // Windows has no permission bits: the folder's ACL decides who reads the file (docs/HOSTING.md).
+  it.skipIf(process.platform === 'win32')('are saved readable by this user only', async () => {
+    const { sessions, file } = setup();
+    await sessions.login(CREDENTIALS, true);
+
     expect(statSync(file.path).mode & 0o777).toBe(0o600);
     expect(statSync(join(file.path, '..')).mode & 0o777).toBe(0o700);
-    expect(Object.values(JSON.parse(text).sessions)).toEqual([{ digest: expect.any(String), credentials: expect.any(String), expires }]);
   });
 
   it('come back after a restart, logging in again with the saved credentials', async () => {
