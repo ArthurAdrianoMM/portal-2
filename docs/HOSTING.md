@@ -58,7 +58,7 @@ A remembered session is saved to `sessions.json` in the data folder (`PORTAL2_DA
 - The key is derived from the token's secret (HKDF-SHA256, with the id as salt), and the user and password are encrypted together with AES-256-GCM, the id as additional data.
 - The server keeps no key. The file holds ids, digests, dates and ciphertext; without the users' tokens it opens nothing.
 - When a remembered session is used after a restart, or after 12 hours idle, the server decrypts the credentials with the token that came with the request, logs in again, and keeps the session in memory.
-- The folder is created only when someone ticks "Lembrar de mim", with mode `0700`; the file is written atomically, with mode `0600`. Expired sessions are dropped whenever it is written.
+- The folder is created only when someone ticks "Lembrar de mim", with mode `0700`; the file is written atomically, with mode `0600`. Windows ignores these modes: there, the folder's permissions decide who reads the file, and the default folder is inside your user profile, which other users can't read. Expired sessions are dropped whenever it is written.
 
 What this can't protect: while the server runs, its memory holds the sessions it is using. That is the same as today.
 
