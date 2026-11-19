@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
+import { LegalPage } from './components/LegalPage';
 import { LoginPage } from './components/LoginPage';
 import { OperationPage } from './components/OperationPage';
 import { Sidebar } from './components/Sidebar';
 import { StartPage } from './components/StartPage';
 import { TopBar } from './components/TopBar';
+import { LEGAL } from './content/legal';
 import { searchOperations } from './lib/search';
 import { buildModel, type DocModel, type OpenApiDocument } from './lib/spec';
 import { API, routeHref, useConnection, useRoute } from './state';
@@ -35,12 +37,13 @@ export function App() {
 
   const operation = model && route.kind === 'operacao' ? model.operations.find((op) => op.id === route.id) : undefined;
 
+  const legal = route.kind === 'documento' ? route.id : null;
   const isLogin = route.kind === 'entrar';
   useEffect(() => {
-    const page = isLogin ? 'Entrar' : operation?.summary;
+    const page = isLogin ? 'Entrar' : legal ? LEGAL[legal].title : operation?.summary;
     document.title = page ? `${page} · Portal 2` : 'Portal 2';
     window.scrollTo(0, 0);
-  }, [operation, isLogin]);
+  }, [operation, isLogin, legal]);
 
   if (loadError) {
     return (
@@ -83,7 +86,9 @@ export function App() {
       <div className="layout">
         <Sidebar model={model} route={route} results={results} connection={connection.state} />
         <main className="content">
-          {operation ? (
+          {legal ? (
+            <LegalPage id={legal} />
+          ) : operation ? (
             <OperationPage key={operation.id} model={model} operation={operation} connection={connection} />
           ) : route.kind === 'operacao' ? (
             <div className="screen-message">

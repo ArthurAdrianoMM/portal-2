@@ -20,57 +20,84 @@ const hostOf = (url: string) => {
   }
 };
 
+/** Served from this computer, or hosted (PUBLIC_URL, docs/HOSTING.md). The same app; only the wording changes. */
+const isLoopback = (url: string) => {
+  try {
+    return ['127.0.0.1', 'localhost', '[::1]'].includes(new URL(url).hostname);
+  } catch {
+    return true;
+  }
+};
+
 export function StartPage({ model }: { model: DocModel }) {
-  const localHost = hostOf(model.serverUrl) || location.host;
+  const serverHost = hostOf(model.serverUrl) || location.host;
   const portalHost = hostOf(model.portalUrl);
+  const hosted = !isLoopback(model.serverUrl);
 
   return (
     <div className="start">
       <section className="hero">
         <p className="overline overline--gold">Comece aqui</p>
         <h1>Seus dados do Portal do Aluno, em JSON.</h1>
-        <p>
-          Uma API somente leitura que roda no seu computador. Ela entra no portal com a sua conta, organiza as
-          respostas e serve tudo em <code>127.0.0.1</code>. Não existe servidor no meio, então ninguém além de você e
-          do portal vê sua senha.
-        </p>
-      </section>
-
-      <section aria-labelledby="passos">
-        <h2 id="passos">Testar em três passos</h2>
-        <div className="steps">
-          <div className="card step">
-            <span className="step__number">01</span>
-            <h3>Rode o servidor local</h3>
+        {hosted ? (
+          <>
             <p>
-              Precisa do Node 22 ou mais novo. Dentro do repositório, o mesmo comando é <code>npm run serve</code>.
-            </p>
-            <div className="actions">
-              <code className="code-chip">{SERVE_COMMAND}</code>
-              <CopyButton text={SERVE_COMMAND} small />
-            </div>
-          </div>
-          <div className="card step">
-            <span className="step__number">02</span>
-            <h3>Abra a documentação</h3>
-            <p>O terminal mostra o endereço. Sem entrar, dá para ler todos os endpoints e exemplos.</p>
-            <pre className="terminal">{`Rodando em http://${localHost}/`}</pre>
-          </div>
-          <div className="card step">
-            <span className="step__number">03</span>
-            <h3>Entre e teste</h3>
-            <p>
-              Use o ícone no canto superior direito para entrar com o usuário e a senha do portal. Depois, cada endpoint
-              ganha o botão de enviar.
+              Uma API somente leitura. Ela entra no portal com a sua conta, organiza as respostas e serve tudo aqui, em{' '}
+              <code>{serverHost}</code>. Prefere que a senha não saia do seu computador? O mesmo servidor roda em casa com{' '}
+              <code>{SERVE_COMMAND}</code>.
             </p>
             <div className="actions">
               <a className="btn btn--primary btn--small" href={loginHref({ kind: 'inicio' })}>
                 Entrar
               </a>
             </div>
-          </div>
-        </div>
+          </>
+        ) : (
+          <p>
+            Uma API somente leitura que roda no seu computador. Ela entra no portal com a sua conta, organiza as
+            respostas e serve tudo em <code>127.0.0.1</code>. Não existe servidor no meio, então ninguém além de você e
+            do portal vê sua senha.
+          </p>
+        )}
       </section>
+
+      {!hosted && (
+        <section aria-labelledby="passos">
+          <h2 id="passos">Testar em três passos</h2>
+          <div className="steps">
+            <div className="card step">
+              <span className="step__number">01</span>
+              <h3>Rode o servidor local</h3>
+              <p>
+                Precisa do Node 22 ou mais novo. Dentro do repositório, o mesmo comando é <code>npm run serve</code>.
+              </p>
+              <div className="actions">
+                <code className="code-chip">{SERVE_COMMAND}</code>
+                <CopyButton text={SERVE_COMMAND} small />
+              </div>
+            </div>
+            <div className="card step">
+              <span className="step__number">02</span>
+              <h3>Abra a documentação</h3>
+              <p>O terminal mostra o endereço. Sem entrar, dá para ler todos os endpoints e exemplos.</p>
+              <pre className="terminal">{`Rodando em http://${serverHost}/`}</pre>
+            </div>
+            <div className="card step">
+              <span className="step__number">03</span>
+              <h3>Entre e teste</h3>
+              <p>
+                Use o ícone no canto superior direito para entrar com o usuário e a senha do portal. Depois, cada endpoint
+                ganha o botão de enviar.
+              </p>
+              <div className="actions">
+                <a className="btn btn--primary btn--small" href={loginHref({ kind: 'inicio' })}>
+                  Entrar
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section aria-labelledby="fluxo">
         <h2 id="fluxo">Para onde vão seus dados</h2>
@@ -82,9 +109,9 @@ export function StartPage({ model }: { model: DocModel }) {
           </div>
           <ArrowIcon />
           <div className="flow__node flow__node--local">
-            <span className="overline overline--gold">Seu computador</span>
+            <span className="overline overline--gold">{hosted ? 'Este servidor' : 'Seu computador'}</span>
             <strong>
-              <code>{localHost}</code>
+              <code>{serverHost}</code>
             </strong>
             <span>Guarda a sessão na memória e organiza as respostas.</span>
           </div>
@@ -136,6 +163,11 @@ export function StartPage({ model }: { model: DocModel }) {
           Fora do escopo, de propósito: financeiro e pagamentos, troca de senha, matrícula e qualquer escrita no portal.
         </p>
       </section>
+
+      <footer className="start__footer muted">
+        <a href="#/termos">Termos de uso</a>
+        <a href="#/privacidade">Política de privacidade</a>
+      </footer>
     </div>
   );
 }

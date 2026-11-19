@@ -268,6 +268,64 @@ kbd {
   padding-left: 20px;
 }
 
+/* ── Termos e privacidade ────────────────────────────────── */
+
+.legal {
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  line-height: 1.65;
+  color: var(--text-3);
+}
+.legal__head {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.legal__head h1 {
+  margin: 0;
+  font-size: 34px;
+  line-height: 1.15;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--text-1);
+}
+.legal__head p:last-child {
+  margin: 0;
+  font-size: 17px;
+}
+.legal section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.legal h2 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 500;
+  color: var(--text-1);
+}
+.legal__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.legal__body li + li {
+  margin-top: 6px;
+}
+.legal__body strong {
+  font-weight: 600;
+  color: var(--text-2);
+}
+.legal__other {
+  margin: 0;
+  padding-top: 24px;
+  border-top: 1px solid var(--line-soft);
+  font-size: 14px;
+  color: var(--text-5);
+}
+
 /* ── App shell ───────────────────────────────────────────── */
 
 .topbar {
@@ -934,6 +992,20 @@ kbd {
   font-weight: 500;
   color: var(--text-1);
 }
+.start__footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line-soft);
+  font-size: 13px;
+}
+.start__footer a {
+  color: inherit;
+}
+.start__footer a:hover {
+  color: var(--text-1);
+}
 .hero {
   max-width: 760px;
   gap: 14px;
@@ -1476,6 +1548,19 @@ kbd {
   margin-top: 4px;
   border-radius: 10px;
   font-size: 15px;
+}
+.login__terms {
+  margin: -6px 0 0;
+  font-size: 13px;
+  text-align: center;
+  text-wrap: balance;
+  color: var(--text-5);
+}
+.login__terms a {
+  color: var(--text-3);
+}
+.login__terms a:hover {
+  color: var(--text-1);
 }
 .login__note {
   display: flex;

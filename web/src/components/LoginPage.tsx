@@ -140,6 +140,11 @@ export function LoginPage({ title, version, connection, voltar }: LoginPageProps
                   </>
                 )}
               </button>
+
+              <p className="login__terms">
+                Ao entrar, você aceita os <a href="#/termos">Termos de uso</a> e a{' '}
+                <a href="#/privacidade">Política de privacidade</a>.
+              </p>
             </form>
           )}
 
