@@ -24,3 +24,18 @@ updates:
       dev-dependencies:
         dependency-type: development
         update-types: [minor, patch]
+
+  # The Dockerfile's node image and compose.yaml's cloudflared.
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7

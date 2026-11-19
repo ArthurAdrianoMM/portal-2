@@ -9,7 +9,7 @@ Hosting is an alternative, never a replacement. The local server and `npx portal
 - **One server, one behavior.** Local and hosted run the same code, the same routes and the same login. What differs is configuration, never a code path.
 - **One login.** Your portal user and password, on one page. No extra accounts, passwords or codes to create.
 - **Clean, simple, robust.** Few moving parts, no dependency where a few lines will do, every rule in one place.
-- **Easy to run.** Locally, one command. Hosted, `docker compose up -d` behind a Cloudflare Tunnel.
+- **Easy to run.** Locally, one command. Hosted, `docker compose up -d` behind a Cloudflare Tunnel (see [Running it](#running-it)).
 
 ## Routes
 
@@ -93,12 +93,12 @@ Claude.ai and ChatGPT only connect through OAuth, which is step 3.
 
 `/api`, the web app at `/`, sessions with the cookie and the bearer, "Lembrar de mim" with encrypted saving, and `/mcp`. Works locally right away; it is also phase 2 of [MCP.md](MCP.md).
 
-### 2. Docker
+### 2. Docker (done)
 
-- Configuration by environment: `PUBLIC_URL` (the address people use; drives the Host and Origin checks, the cookie's `Secure` flag, the OpenAPI server URL and later the OAuth addresses), `HOST`, `PORT`, `PORTAL2_DATA_DIR`.
-- A `Dockerfile` (build stage, then `node:24-slim` with production dependencies, non-root, `HEALTHCHECK /health`) and a `compose.yaml` with the app and `cloudflared`. The data folder is a volume; no port is published.
-- The Termos de uso and Política de privacidade as pages of the web app, linked from the login: "Ao entrar, você aceita os Termos".
-- Cloudflare: a rate limit on the logins, and no bot challenge on `/mcp`, `/oauth/*` and `/.well-known/*`, which AI clients can't solve.
+- Configuration by environment: `PUBLIC_URL` (the address people use; drives the Host and Origin checks, the cookie's `Secure` flag, the OpenAPI server URL and later the OAuth addresses), `HOST`, `PORT`, `PORTAL2_DATA_DIR`. Unset, they give the local server: `http://127.0.0.1:4321`.
+- A `Dockerfile` (build stage, then `node:24-slim` with production dependencies, non-root, `HEALTHCHECK /health`) and a `compose.yaml` with the app and `cloudflared`. The data folder is a volume; no port is published. `/health` answers any `Host`, because the health check calls `127.0.0.1`.
+- The Termos de uso and Política de privacidade as pages of the web app (`#/termos`, `#/privacidade`), linked from the login: "Ao entrar, você aceita os Termos". The start page says "este servidor" instead of "seu computador" when `PUBLIC_URL` isn't a loopback address.
+- Cloudflare: a rate limit on the logins, and no bot challenge on `/mcp`, `/oauth/*` and `/.well-known/*`, which AI clients can't solve. These are dashboard settings; see "Running it" below.
 
 ### 3. OAuth, for Claude.ai and ChatGPT
 
@@ -107,6 +107,32 @@ The OAuth flow ends on the same login page. `/oauth/authorize` sends people to i
 ### 4. Hardening and a small beta
 
 Turnstile on the login, limits on failed logins per address and per user, a global cap on concurrent requests to the portal. Then a few classmates, before anyone else.
+
+## Running it
+
+On a server with Docker, behind a [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/), so the server opens no port to the internet.
+
+1. **Create the tunnel.** In the Cloudflare dashboard: Zero Trust > Networks > Tunnels > Create a tunnel > Cloudflared. Copy the token from the Docker install command.
+2. **Point a hostname at the app.** In the tunnel's Public Hostnames, add `portal.example.com` with service `HTTP` and URL `app:4321` (the compose service name). Leave the Host header as is: the app checks it against `PUBLIC_URL`.
+3. **Configure and start.** Next to `compose.yaml`:
+
+   ```sh
+   cp .env.example .env   # PUBLIC_URL=https://portal.example.com and TUNNEL_TOKEN=…
+   docker compose up -d --build
+   docker compose logs -f app
+   ```
+
+   `cloudflared` starts once the app is healthy. Open `PUBLIC_URL`: the start page should say "Este servidor".
+
+4. **Protect the login** (Security > WAF):
+   - A rate-limiting rule for `POST /api/sessao`, such as 5 requests a minute per IP, blocking for 10 minutes.
+   - If Bot Fight Mode or a challenge rule is on, skip it for `/mcp`, `/oauth/` and `/.well-known/`.
+
+**Updating:** `git pull && docker compose up -d --build`. Sessions without "Lembrar de mim" end, as on any restart; remembered ones are in the `data` volume and survive.
+
+**Backups:** the `data` volume holds only `sessions.json`. Losing it logs everyone out, nothing more, so it doesn't need a backup.
+
+**Without Docker:** `PUBLIC_URL=https://portal.example.com HOST=0.0.0.0 npx portal-2 serve` is the same server. Put any reverse proxy in front that keeps the `Host` header.
 
 ## Why this design
 

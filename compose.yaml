@@ -1,0 +1,30 @@
+# The hosted portal-2: the server, reachable only through a Cloudflare Tunnel.
+# No port is published; cloudflared reaches the app on the compose network.
+# Setup: docs/HOSTING.md ("Running it"). Values come from .env (see .env.example).
+
+services:
+  app:
+    build: .
+    image: portal-2
+    restart: unless-stopped
+    environment:
+      PUBLIC_URL: ${PUBLIC_URL:?Defina PUBLIC_URL no .env, como https://portal.example.com}
+    volumes:
+      - data:/data
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+
+  cloudflared:
+    image: cloudflare/cloudflared:2026.10.7
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?Defina TUNNEL_TOKEN no .env, com o token do túnel da Cloudflare}
+    depends_on:
+      app:
+        condition: service_healthy
+
+volumes:
+  # sessions.json: remembered sessions, passwords encrypted by each session's token.
+  data:

@@ -13,7 +13,8 @@ Class project, not official, not affiliated with SENAI or FIEB. Scope and limits
 - [x] Web app with the API docs and "testar", built from `openapi.json` (`web/`)
 - [x] Sessions in a cookie or a bearer; "Lembrar de mim" keeps one for 30 days, the password encrypted by its own token
 - [x] MCP server for AI agents, over stdio (`portal-2 mcp`) and HTTP (`/mcp`). Phases: [docs/MCP.md](docs/MCP.md)
-- [ ] Hosting: Docker, OAuth for Claude.ai and ChatGPT ([docs/HOSTING.md](docs/HOSTING.md))
+- [x] Hosting with Docker and a Cloudflare Tunnel: `docker compose up -d` ([docs/HOSTING.md](docs/HOSTING.md#running-it))
+- [ ] OAuth for Claude.ai and ChatGPT ([docs/HOSTING.md](docs/HOSTING.md))
 
 ## Requirements
 
@@ -126,12 +127,16 @@ Except for Claude Desktop and VS Code, the client keeps the password in its conf
 
 Every tool only reads. The tools say so to the client (`readOnlyHint`), so most clients run them without asking each time.
 
+## Hosting it
+
+The same server runs on your own machine for people who'd rather not install anything: `docker compose up -d`, behind a Cloudflare Tunnel, configured by `PUBLIC_URL` in a `.env`. No port opens to the internet. Step by step: [docs/HOSTING.md](docs/HOSTING.md#running-it).
+
 ## How the local server stays local
 
 - It listens on `127.0.0.1` only.
 - Every API route and `/mcp` need a session: the web app's cookie, or a token as `Authorization: Bearer`. `/`, `/api/openapi.json` and `/health` don't, and none of them carry personal data.
 - Requests that change something (logging in or out, `/mcp`) are refused when their `Origin` is another site, so a page open in the browser can't log you in or out, or use your session. The login takes JSON only.
-- It answers only when the `Host` header is `127.0.0.1:<port>` or `localhost:<port>`, which blocks DNS-rebinding attacks.
+- It answers only when the `Host` header is `127.0.0.1:<port>` or `localhost:<port>` (or the host of `PUBLIC_URL`, when hosted), which blocks DNS-rebinding attacks.
 - It sends no CORS headers, so other sites open in your browser can't read its responses.
 - The web app is built into `dist/web` and served by this server, fonts included (no CDN). Its Content-Security-Policy allows scripts, styles and requests only to this server, with no inline code.
 - The password goes from the page to this server and from here to the portal only. The server keeps it in memory, to log in again when the portal expires the session, and never logs it. Only "Lembrar de mim" writes it to disk: in `sessions.json` (mode `0600`), encrypted with AES-256-GCM by a key derived from that session's token, which the server doesn't keep. If the portal refuses a saved password, the session ends and the password is never sent again. Details: [docs/HOSTING.md](docs/HOSTING.md).
