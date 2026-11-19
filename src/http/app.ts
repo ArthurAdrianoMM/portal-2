@@ -3,7 +3,7 @@
  * routes and the MCP tools are generated from the operation definitions.
  *
  * The same code runs locally and hosted; only `origin` differs
- * (docs/HOSTING.md). Routes that need a login take the session token from
+ * (`PUBLIC_URL`, docs/HOSTING.md). Routes that need a login take the session token from
  * `Authorization: Bearer` or from the session cookie. The Host check blocks
  * DNS rebinding; requests that change something must come from this server's
  * pages or from outside a browser; there are no CORS headers, so other sites
@@ -130,8 +130,14 @@ export function createApp(options: AppOptions): Hono {
   app.use('*', async (c, next) => {
     const started = performance.now();
     await next();
+    // Docker and monitors call /health every few seconds; those lines would bury the rest.
+    if (c.req.path === '/health') return;
     log?.(`${c.req.method} ${c.req.path} ${c.res.status} ${Math.round(performance.now() - started)}ms`);
   });
+
+  // Liveness answers any Host: Docker's HEALTHCHECK calls 127.0.0.1, not the public address. It
+  // reveals nothing a page could use, so the DNS-rebinding check below has nothing to protect here.
+  app.get('/health', (c) => c.json({ status: 'ok', versao: VERSION }, 200, { 'Cache-Control': 'no-store' }));
 
   app.use('*', async (c, next) => {
     if (!hosts.has(new URL(c.req.url).host)) return sendError(c, 'host_invalido');
@@ -146,7 +152,6 @@ export function createApp(options: AppOptions): Hono {
     if (!c.res.headers.has('Cache-Control')) c.header('Cache-Control', 'no-store');
   });
 
-  app.get('/health', (c) => c.json({ status: 'ok', versao: VERSION }));
   app.get(`${API_PREFIX}/openapi.json`, (c) => c.json(openApi));
 
   // Login. The password goes from here to the portal only. It stays in this process's memory and,

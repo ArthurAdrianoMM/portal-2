@@ -12,16 +12,22 @@ Uso:
   portal-2 mcp [--period 2026S2]
 
 Comandos:
-  serve        Serve a interface, a API (/api) e o MCP por HTTP (/mcp) em 127.0.0.1.
+  serve        Serve a interface, a API (/api) e o MCP por HTTP (/mcp), em 127.0.0.1.
   mcp          Servidor MCP no stdio, para agentes de IA. Quem o inicia é o cliente MCP.
 
 Opções:
-  --port       Porta local de serve (padrão 4321).
+  --port       Porta de serve (padrão: PORT, ou 4321).
   --period     Período da matrícula a usar (CODPERLET). Padrão: a matrícula mais recente.
 
 serve: entre com usuário e senha na interface. Com PORTAL_ALUNO_USER e PORTAL_ALUNO_PASSWORD
 definidos, o servidor já entra no portal ao iniciar. Com "Lembrar de mim", a sessão fica salva por
-30 dias, com a senha criptografada, em PORTAL2_DATA_DIR (padrão ~/.portal-2). Veja docs/HOSTING.md.
+30 dias, com a senha criptografada, em PORTAL2_DATA_DIR (padrão ~/.portal-2).
+
+Para hospedar (veja docs/HOSTING.md):
+  PUBLIC_URL   O endereço que as pessoas usam, como https://portal.example.com.
+               Padrão: http://127.0.0.1:<porta>.
+  HOST         Onde escutar (padrão 127.0.0.1; 0.0.0.0 num contêiner).
+  PORT         A porta, quando não há --port.
 
 mcp: lê PORTAL_ALUNO_USER e PORTAL_ALUNO_PASSWORD, definidos na configuração do cliente MCP,
 e entra no portal na primeira chamada de ferramenta. Veja docs/MCP.md.
@@ -50,11 +56,11 @@ async function main(argv: string[]): Promise<void> {
   if (extra.length > 0) fail(`Argumento a mais: ${extra.join(' ')}\n\n${HELP}`);
 
   switch (command) {
-    case 'serve': {
-      const port = Number(values.port ?? 4321);
-      if (!Number.isInteger(port) || port < 1 || port > 65535) fail('--port precisa ser um número entre 1 e 65535.');
-      return serveCommand({ port, ...(values.period === undefined ? {} : { period: values.period }) });
-    }
+    case 'serve':
+      return serveCommand({
+        ...(values.port === undefined ? {} : { port: values.port }),
+        ...(values.period === undefined ? {} : { period: values.period }),
+      });
     case 'mcp': {
       if (values.port !== undefined) fail('--port vale só para serve: o servidor MCP fala pelo stdio.');
       return mcpCommand(values.period === undefined ? {} : { period: values.period });

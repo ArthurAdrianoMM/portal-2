@@ -42,7 +42,7 @@ writeFileSync(join(WEB_DIR, 'assets', 'art-still-abc123.png'), 'PNG');
 /** A sessions file of its own, in an empty folder. */
 const sessionFile = () => new SessionFile(join(mkdtempSync(join(tmpdir(), 'portal-2-data-')), 'sessions.json'));
 
-function setup(options: FakePortalOptions = {}, operations?: readonly Operation[], webDir = WEB_DIR, loggedIn = true) {
+function setup(options: FakePortalOptions = {}, operations?: readonly Operation[], webDir = WEB_DIR, loggedIn = true, origin = BASE) {
   const { portal, session } = createTestSession({
     routes: {
       'TOTVSEducacional/Periodos': academicRoute(CONTEXT_ID, [{ CODPERLET: '2026S2', IDPERLET: 1042 }]),
@@ -56,19 +56,19 @@ function setup(options: FakePortalOptions = {}, operations?: readonly Operation[
   const logs: string[] = [];
   const app = createApp({
     sessions,
-    origin: BASE,
+    origin,
     portalUrl: ORIGIN,
     log: (line) => logs.push(line),
     webDir,
     ...(operations === undefined ? {} : { operations }),
   });
-  const request = (path: string, init: RequestInit = {}, base = BASE) => app.request(`${base}${path}`, init);
-  const authed = (path: string, init: RequestInit = {}, base = BASE) =>
+  const request = (path: string, init: RequestInit = {}, base = origin) => app.request(`${base}${path}`, init);
+  const authed = (path: string, init: RequestInit = {}, base = origin) =>
     request(path, { ...init, headers: { authorization: `Bearer ${token}`, ...init.headers } }, base);
   const login = (body: unknown, headers: Record<string, string> = {}) =>
     request('/api/sessao', {
       method: 'POST',
-      headers: { 'content-type': 'application/json', origin: BASE, ...headers },
+      headers: { 'content-type': 'application/json', origin, ...headers },
       body: typeof body === 'string' ? body : JSON.stringify(body),
     });
   return { app, portal, sessions, file, token, logs, request, authed, login };
@@ -194,8 +194,16 @@ describe('local-only protections', () => {
   });
 
   it('accepts localhost as the Host', async () => {
-    const res = await setup().request('/health', {}, `http://localhost:${PORT}`);
+    const res = await setup().request('/api/openapi.json', {}, `http://localhost:${PORT}`);
     expect(res.status).toBe(200);
+  });
+
+  it('answers /health for any Host, without logging it (Docker calls 127.0.0.1)', async () => {
+    const { request, logs } = setup();
+    const res = await request('/health', {}, 'http://anything.test');
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ status: 'ok' });
+    expect(logs).toHaveLength(0);
   });
 
   it('sends no CORS headers, even to a cross-origin request', async () => {
@@ -207,6 +215,34 @@ describe('local-only protections', () => {
     const { authed, logs } = setup();
     await authed('/api/disciplinas?apenasEmCurso=true');
     expect(logs.at(-1)).toMatch(/^GET \/api\/disciplinas 200 \d+ms$/);
+  });
+});
+
+describe('hosted (PUBLIC_URL)', () => {
+  const PUBLIC = 'https://portal.example.test';
+  const hosted = () => setup({}, undefined, WEB_DIR, false, PUBLIC);
+
+  it('answers for the public address only', async () => {
+    const { request } = hosted();
+    expect((await request('/api/openapi.json')).status).toBe(200);
+    expect((await request('/api/openapi.json', {}, BASE)).status).toBe(403);
+    expect((await request('/api/openapi.json', {}, 'http://localhost:4321')).status).toBe(403);
+  });
+
+  it('accepts logins from its own pages only', async () => {
+    const { login } = hosted();
+    expect((await login({ usuario: USER, senha: PASSWORD })).status).toBe(200);
+    expect((await login({ usuario: USER, senha: PASSWORD }, { origin: BASE })).status).toBe(403);
+  });
+
+  it('marks the cookie Secure on https', async () => {
+    const res = await hosted().login({ usuario: USER, senha: PASSWORD });
+    expect(res.headers.get('set-cookie')).toMatch(/;\s*Secure/i);
+  });
+
+  it('puts the public address in the OpenAPI document', async () => {
+    const doc = await (await hosted().request('/api/openapi.json')).json();
+    expect(doc).toMatchObject({ servers: [{ url: `${PUBLIC}/api` }] });
   });
 });
 

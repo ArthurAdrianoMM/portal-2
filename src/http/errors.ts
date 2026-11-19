@@ -5,7 +5,7 @@ import { COMMON_ERROR_CODES, toErrorBody, type CommonErrorCode } from '../api/er
 /** Errors only the local HTTP server raises. */
 export const LOCAL_ERROR_CODES = {
   token_invalido: 'Sem sessão: o token está ausente ou errado, ou a sessão terminou. Entre de novo para abrir outra.',
-  host_invalido: 'O cabeçalho Host não é o endereço local deste servidor.',
+  host_invalido: 'O cabeçalho Host não é o endereço deste servidor.',
   origem_invalida: 'Pedidos que mudam algo (entrar, sair, MCP) só são aceitos das páginas deste servidor ou de clientes fora do navegador.',
   nao_encontrado: 'Esta rota não existe.',
 } as const;
