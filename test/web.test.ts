@@ -1,4 +1,4 @@
-/** The docs page's logic (web/src/lib), checked against the real generated spec. */
+/** The web app's logic (web/src/lib), checked against the real generated spec. */
 import { describe, expect, it } from 'vitest';
 import { generateOpenApi } from '../src/openapi/generate.js';
 import { TAGS, defineFileOperation, isFileOperation, operations } from '../src/operations/index.js';

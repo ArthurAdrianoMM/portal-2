@@ -6,10 +6,10 @@ import { StartPage } from './components/StartPage';
 import { TopBar } from './components/TopBar';
 import { searchOperations } from './lib/search';
 import { buildModel, type DocModel, type OpenApiDocument } from './lib/spec';
-import { routeHref, useConnection, useRoute } from './state';
+import { API, routeHref, useConnection, useRoute } from './state';
 
-/** The page sits at /docs/; the document is served next to it, at /openapi.json. */
-const SPEC_URL = '../openapi.json';
+/** The OpenAPI document the server generates from the operations. */
+const SPEC_URL = `${API}/openapi.json`;
 
 export function App() {
   const [model, setModel] = useState<DocModel | null>(null);

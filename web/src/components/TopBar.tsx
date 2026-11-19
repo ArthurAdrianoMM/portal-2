@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type FocusEvent, type KeyboardEvent } from 'react';
-import { loginHref, type Connection, type Route } from '../state';
+import { API, loginHref, type Connection, type Route } from '../state';
 import { ChevronDownIcon, DownloadIcon, LogOutIcon, SearchIcon, UserIcon } from './Icons';
 
 function words(nome: string): string[] {
@@ -199,7 +199,7 @@ export function TopBar({ title, version, query, onQuery, onSubmitQuery, connecti
       </label>
 
       <div className="topbar__actions">
-        <a className="btn btn--ghost" href="../openapi.json" download="openapi.json">
+        <a className="btn btn--ghost" href={`${API}/openapi.json`} download="openapi.json">
           <DownloadIcon size={15} />
           openapi.json
         </a>

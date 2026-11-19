@@ -12,15 +12,16 @@ Uso:
   portal-2 mcp [--period 2026S2]
 
 Comandos:
-  serve        Serve a API e a documentação em 127.0.0.1.
+  serve        Serve a interface, a API (/api) e o MCP por HTTP (/mcp) em 127.0.0.1.
   mcp          Servidor MCP no stdio, para agentes de IA. Quem o inicia é o cliente MCP.
 
 Opções:
   --port       Porta local de serve (padrão 4321).
   --period     Período da matrícula a usar (CODPERLET). Padrão: a matrícula mais recente.
 
-serve: entre com usuário e senha na documentação. Com PORTAL_ALUNO_USER e PORTAL_ALUNO_PASSWORD
-definidos, o servidor já entra no portal ao iniciar.
+serve: entre com usuário e senha na interface. Com PORTAL_ALUNO_USER e PORTAL_ALUNO_PASSWORD
+definidos, o servidor já entra no portal ao iniciar. Com "Lembrar de mim", a sessão fica salva por
+30 dias, com a senha criptografada, em PORTAL2_DATA_DIR (padrão ~/.portal-2). Veja docs/HOSTING.md.
 
 mcp: lê PORTAL_ALUNO_USER e PORTAL_ALUNO_PASSWORD, definidos na configuração do cliente MCP,
 e entra no portal na primeira chamada de ferramenta. Veja docs/MCP.md.

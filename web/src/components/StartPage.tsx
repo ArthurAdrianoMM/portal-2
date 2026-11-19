@@ -7,9 +7,9 @@ const SERVE_COMMAND = 'portal-2 serve';
 
 const PROMISES = [
   { title: 'Só leitura', text: 'Nenhuma rota altera nada no portal.' },
-  { title: 'Senha fica com você', text: 'Vai só para o servidor local e dele para o portal. Nunca é salva.' },
-  { title: 'Sessão na memória', text: 'Some quando você sai ou encerra o servidor.' },
-  { title: 'Token por login', text: 'Outros sites abertos no navegador não conseguem usar a API.' },
+  { title: 'Senha fica com você', text: 'Vai só para o servidor e dele para o portal. Só é salva com “Lembrar de mim”, criptografada.' },
+  { title: 'Sessão sob controle', text: 'Sem “Lembrar de mim”, some quando você sai ou o servidor reinicia. Com ele, dura 30 dias.' },
+  { title: 'Sessão protegida', text: 'Outros sites abertos no navegador não conseguem usar a API nem ler as respostas.' },
 ];
 
 const hostOf = (url: string) => {
@@ -78,7 +78,7 @@ export function StartPage({ model }: { model: DocModel }) {
           <div className="flow__node">
             <span className="overline">Seu navegador</span>
             <strong>Esta documentação</strong>
-            <span>Envia a senha uma vez ao servidor local; depois, só o token.</span>
+            <span>Envia a senha uma vez ao servidor; depois, só o cookie da sessão.</span>
           </div>
           <ArrowIcon />
           <div className="flow__node flow__node--local">

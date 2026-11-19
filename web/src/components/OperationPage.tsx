@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { buildUrl } from '../lib/samples';
 import { flattenSchema } from '../lib/schema';
 import type { DocModel, DocOperation } from '../lib/spec';
-import { errorCodeOf, routeHref, type Connection } from '../state';
+import { API, errorCodeOf, routeHref, type Connection } from '../state';
 import { CodePanel, type ApiResult } from './CodePanel';
 import { CopyButton } from './CopyButton';
 import { InlineText, Markdown } from './Markdown';
@@ -60,8 +60,9 @@ export function OperationPage({ model, operation, connection }: OperationPagePro
     setSending(true);
     const started = performance.now();
     try {
-      const res = await fetch(buildUrl(location.origin, operation, values), {
-        headers: { authorization: `Bearer ${connection.token}`, accept: 'application/json' },
+      // The session cookie goes with the request; the page never handles the token.
+      const res = await fetch(buildUrl(`${location.origin}${API}`, operation, values), {
+        headers: { accept: 'application/json' },
         cache: 'no-store',
       });
       const type = res.headers.get('content-type') ?? '';
@@ -119,7 +120,7 @@ export function OperationPage({ model, operation, connection }: OperationPagePro
               <code className="code-chip">{operation.path}</code>
               <CopyButton text={operation.path} small label="Copiar rota" />
               <span className="op-endpoint__badges">
-                <span className="pill pill--warn">Requer token</span>
+                <span className="pill pill--warn">Requer login</span>
                 {operation.method === 'GET' && <span className="pill pill--ok">Somente leitura</span>}
               </span>
             </div>
