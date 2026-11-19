@@ -1,25 +1,23 @@
-import type { AddressInfo } from 'node:net';
 import { join } from 'node:path';
 import { serve, type ServerType } from '@hono/node-server';
 import { DEFAULT_CONFIG, PortalSession, type Credentials, type PortalConfig } from '../core/index.js';
 import { createApp } from '../http/app.js';
 import { SessionFile } from '../http/session-file.js';
 import { Sessions } from '../http/sessions.js';
-import { PASSWORD_VAR, USER_VAR, dataDir, readEnvCredentials } from '../env.js';
+import { PASSWORD_VAR, USER_VAR, dataDir, readEnvCredentials, serverAddress } from '../env.js';
 import { PACKAGE_NAME, VERSION } from '../version.js';
 import { checkForUpdate, updateHint } from './update-check.js';
 
 export interface ServeOptions {
-  port: number;
+  /** `--port`, as typed. Wins over `PORT`. */
+  port?: string;
   /** Period code of the enrollment to use (`CODPERLET`). */
   period?: string;
 }
 
-const HOSTNAME = '127.0.0.1';
-
-function listen(app: ReturnType<typeof createApp>, port: number): Promise<ServerType> {
+function listen(app: ReturnType<typeof createApp>, host: string, port: number): Promise<ServerType> {
   return new Promise((resolve, reject) => {
-    const server = serve({ fetch: app.fetch, hostname: HOSTNAME, port }, () => resolve(server));
+    const server = serve({ fetch: app.fetch, hostname: host, port }, () => resolve(server));
     server.once('error', (error: NodeJS.ErrnoException) => {
       reject(
         error.code === 'EADDRINUSE'
@@ -39,11 +37,12 @@ export function envCredentials(env: NodeJS.ProcessEnv = process.env): Credential
 }
 
 /**
- * `portal-2 serve`: serves the web app, the API and MCP over HTTP on
- * 127.0.0.1. Login happens in the web app, or at startup when the credentials
- * are in the environment.
+ * `portal-2 serve`: serves the web app, the API and MCP over HTTP, on
+ * 127.0.0.1 unless `HOST` says otherwise. Login happens in the web app, or at
+ * startup when the credentials are in the environment.
  */
 export async function serveCommand(options: ServeOptions): Promise<void> {
+  const { host, port, publicUrl } = serverAddress(process.env, options.port);
   const config: Partial<PortalConfig> = options.period === undefined ? {} : { codPerLet: options.period };
   const folder = dataDir();
   // The password stays in this process's memory, so a session can log in again after the portal
@@ -61,25 +60,25 @@ export async function serveCommand(options: ServeOptions): Promise<void> {
     initial = { token, period: state.context.codPerLet };
   }
 
-  const origin = `http://${HOSTNAME}:${options.port}`;
   const app = createApp({
     sessions,
-    origin,
+    origin: publicUrl,
     portalUrl: config.baseUrl ?? DEFAULT_CONFIG.baseUrl,
     log: (line) => console.error(line),
   });
-  const server = await listen(app, options.port);
-  const { port } = server.address() as AddressInfo;
-  const url = `http://${HOSTNAME}:${port}/`;
+  const server = await listen(app, host, port);
+  const url = `${publicUrl}/`;
+  // When hosted, the address people use isn't where the process listens: show both.
+  const listening = publicUrl === `http://${host}:${port}` ? '' : ` (escutando em ${host}:${port})`;
 
   const lines = initial
     ? [
         `✓ Conectado. Matrícula do período ${initial.period}.`,
         '',
-        `Rodando em ${url}#token=${initial.token}`,
+        `Rodando em ${url}#token=${initial.token}${listening}`,
         `Token:      ${initial.token}`,
       ]
-    : [`Rodando em ${url}`];
+    : [`Rodando em ${url}${listening}`];
   console.log(
     [
       ...lines,

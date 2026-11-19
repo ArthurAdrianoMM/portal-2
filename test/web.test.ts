@@ -130,12 +130,15 @@ describe('search', () => {
 });
 
 describe('routes', () => {
-  it('round-trips operation and login routes', () => {
+  it('round-trips operation, login and document routes', () => {
     for (const route of [
       { kind: 'inicio' },
       { kind: 'operacao', id: 'listarNotas' },
       { kind: 'entrar', voltar: '#/' },
       { kind: 'entrar', voltar: '#/operacao/listarNotas' },
+      { kind: 'entrar', voltar: '#/termos' },
+      { kind: 'documento', id: 'termos' },
+      { kind: 'documento', id: 'privacidade' },
     ] as const) {
       expect(parseRoute(routeHref(route))).toEqual(route);
     }
@@ -145,6 +148,11 @@ describe('routes', () => {
     const href = loginHref({ kind: 'operacao', id: 'listarNotas' });
     expect(parseRoute(href)).toEqual({ kind: 'entrar', voltar: '#/operacao/listarNotas' });
     expect(loginHref(parseRoute(href))).toBe(href);
+  });
+
+  it('opens the documents only by their exact names', () => {
+    expect(parseRoute('#/termosx')).toEqual({ kind: 'inicio' });
+    expect(parseRoute('#/privacidade?x=1')).toEqual({ kind: 'documento', id: 'privacidade' });
   });
 
   it('only returns to pages of the docs, never to another site or the login screen', () => {
