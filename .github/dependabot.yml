@@ -17,6 +17,12 @@ updates:
     # Wait a week before proposing a new release, so a compromised one is usually caught first.
     cooldown:
       default-days: 7
+    ignore:
+      # The Node types follow the oldest supported Node (engines in package.json), not the
+      # newest, so code can't use an API that Node 22 users don't have. Bump this major by
+      # hand together with engines.
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
     groups:
       dependencies:
         dependency-type: production
