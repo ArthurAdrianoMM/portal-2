@@ -98,6 +98,6 @@ Done once, by the package owner.
 
 4. **Protect the tags (optional).** On GitHub, **Settings** → **Rules** → a tag ruleset for `v*` that only you can create, so a collaborator's push can't start a release.
 
-5. **Make the image public.** After the first release with the image, on GitHub open your profile → **Packages** → `portal-2` → **Package settings** → **Change visibility** → Public. The server then pulls it without logging in.
+5. **Check the image is public.** The first release with the image creates the `portal-2` package on ghcr.io, linked to the repository and public like it, so the server pulls without logging in. If it shows Private (your profile → **Packages** → `portal-2` → **Package settings**), make it public. That first push can also fail with `denied` while the package is being created: re-run the failed job.
 
 The trusted publisher matches the repository and the workflow file name exactly. Rename either one and npm refuses the publish with a 404 until the setting is updated.
