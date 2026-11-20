@@ -149,6 +149,8 @@ export function createApp(options: AppOptions): Hono {
     await next();
     c.header('X-Content-Type-Options', 'nosniff');
     c.header('Referrer-Policy', 'no-referrer');
+    // Hosted on https: browsers that came once never try plain http again.
+    if (secure) c.header('Strict-Transport-Security', 'max-age=31536000');
     if (!c.res.headers.has('Cache-Control')) c.header('Cache-Control', 'no-store');
   });
 

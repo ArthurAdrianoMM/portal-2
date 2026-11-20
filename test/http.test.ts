@@ -235,9 +235,11 @@ describe('hosted (PUBLIC_URL)', () => {
     expect((await login({ usuario: USER, senha: PASSWORD }, { origin: BASE })).status).toBe(403);
   });
 
-  it('marks the cookie Secure on https', async () => {
+  it('marks the cookie Secure and asks browsers to stay on https', async () => {
     const res = await hosted().login({ usuario: USER, senha: PASSWORD });
     expect(res.headers.get('set-cookie')).toMatch(/;\s*Secure/i);
+    expect(res.headers.get('strict-transport-security')).toBe('max-age=31536000');
+    expect((await setup().request('/')).headers.get('strict-transport-security')).toBeNull();
   });
 
   it('puts the public address in the OpenAPI document', async () => {

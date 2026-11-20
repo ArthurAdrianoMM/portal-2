@@ -114,6 +114,8 @@ On a server with Docker, behind a [Cloudflare Tunnel](https://developers.cloudfl
 
 1. **Create the tunnel.** In the Cloudflare dashboard: Zero Trust > Networks > Tunnels > Create a tunnel > Cloudflared. Copy the token from the Docker install command.
 2. **Point a hostname at the app.** In the tunnel's Public Hostnames, add `portal.example.com` with service `HTTP` and URL `app:4321` (the compose service name). Leave the Host header as is: the app checks it against `PUBLIC_URL`.
+
+   With the CLI instead: `cloudflared tunnel create portal2`, `cloudflared tunnel route dns portal2 portal.example.com`, and `cloudflared tunnel token portal2` for the token. Such a tunnel has no hostnames of its own; `compose.yaml` already sends everything to the app (`TUNNEL_URL`).
 3. **Configure and start.** Next to `compose.yaml`:
 
    ```sh
@@ -124,7 +126,7 @@ On a server with Docker, behind a [Cloudflare Tunnel](https://developers.cloudfl
 
    `cloudflared` starts once the app is healthy. Open `PUBLIC_URL`: the start page should say "Este servidor".
 
-4. **Protect the login** (Security > WAF):
+4. **Protect the login.** Turn on SSL/TLS > Edge Certificates > Always Use HTTPS (the app sends HSTS, which only works after a first https visit). Then, in Security > WAF:
    - A rate-limiting rule for `POST /api/sessao`, such as 5 requests a minute per IP, blocking for 10 minutes.
    - If Bot Fight Mode or a challenge rule is on, skip it for `/mcp`, `/oauth/` and `/.well-known/`.
 
