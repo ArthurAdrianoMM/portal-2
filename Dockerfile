@@ -2,7 +2,7 @@
 # configured by the environment: PUBLIC_URL is the address people use.
 
 # Build: the web app into dist/web, the server into dist/.
-FROM node:24-slim AS build
+FROM node:26-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
@@ -12,7 +12,7 @@ COPY web web
 RUN npm run build
 
 # Run: production dependencies and the build, nothing else.
-FROM node:24-slim
+FROM node:26-slim
 LABEL org.opencontainers.image.source="https://github.com/ArthurAdrianoMM/portal-2" \
       org.opencontainers.image.description="portal-2 serve: the SENAI Portal do Aluno API, web app and MCP server" \
       org.opencontainers.image.licenses="MIT"
