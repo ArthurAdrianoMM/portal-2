@@ -45,16 +45,4 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - run: docker build -t portal-2 .
-      # The image starts, reports healthy, and answers only for PUBLIC_URL's host.
-      - name: Smoke test
-        run: |
-          docker run -d --name app --read-only -e PUBLIC_URL=https://portal.example.test -p 127.0.0.1:4321:4321 portal-2
-          for i in $(seq 30); do
-            [ "$(docker inspect -f '{{.State.Health.Status}}' app)" = healthy ] && break
-            sleep 1
-          done
-          docker inspect -f '{{.State.Health.Status}}' app | grep -qx healthy
-          curl -fsS -H 'Host: portal.example.test' http://127.0.0.1:4321/api/openapi.json > /dev/null
-          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4321/api/openapi.json)" = 403
-      - if: failure()
-        run: docker logs app
+      - run: scripts/docker-smoke.sh portal-2

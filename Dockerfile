@@ -13,6 +13,9 @@ RUN npm run build
 
 # Run: production dependencies and the build, nothing else.
 FROM node:24-slim
+LABEL org.opencontainers.image.source="https://github.com/ArthurAdrianoMM/portal-2" \
+      org.opencontainers.image.description="portal-2 serve: the SENAI Portal do Aluno API, web app and MCP server" \
+      org.opencontainers.image.licenses="MIT"
 ENV NODE_ENV=production \
     HOST=0.0.0.0 \
     PORT=4321 \
