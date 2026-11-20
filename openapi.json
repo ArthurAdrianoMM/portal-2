@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Portal 2",
-    "version": "0.1.2",
+    "version": "0.1.3",
     "description": "API somente leitura para os seus dados do Portal do Aluno do SENAI. Ela roda no seu computador (`portal-2 serve`) e fala com o portal usando a sua conta. Nenhum outro servidor participa.\n\n**Autenticação:** entre com o usuário e a senha do portal na interface, ou envie `POST /sessao` com `{\"usuario\", \"senha\"}` em JSON (e `\"lembrar\": true` para a sessão durar 30 dias). A resposta traz um token; envie-o como `Authorization: Bearer <token>`. Cada login abre uma sessão; `DELETE /sessao` a encerra.",
     "x-portal": {
       "url": "https://senaiweb6.fieb.org.br"
