@@ -21,6 +21,9 @@ services:
     command: tunnel --no-autoupdate run
     environment:
       TUNNEL_TOKEN: ${TUNNEL_TOKEN:?Defina TUNNEL_TOKEN no .env, com o token do túnel da Cloudflare}
+      # Where the tunnel sends everything. A tunnel configured in the dashboard uses its own
+      # public hostnames instead; one created with the CLI has only this.
+      TUNNEL_URL: http://app:4321
     depends_on:
       app:
         condition: service_healthy
