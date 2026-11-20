@@ -38,6 +38,8 @@ writeFileSync(join(WEB_DIR, 'index.html'), '<!doctype html><title>Portal 2</titl
 writeFileSync(join(WEB_DIR, 'assets', 'index-abc123.js'), 'console.log(1);');
 writeFileSync(join(WEB_DIR, 'assets', 'art-abc123.webp'), 'RIFF');
 writeFileSync(join(WEB_DIR, 'assets', 'art-still-abc123.png'), 'PNG');
+writeFileSync(join(WEB_DIR, 'favicon.ico'), 'ICO');
+writeFileSync(join(WEB_DIR, 'site.webmanifest'), '{}');
 
 /** A sessions file of its own, in an empty folder. */
 const sessionFile = () => new SessionFile(join(mkdtempSync(join(tmpdir(), 'portal-2-data-')), 'sessions.json'));
@@ -278,6 +280,14 @@ describe('web app', () => {
     expect((await request('/')).headers.get('cache-control')).toBe('no-store');
     expect((await request('/assets/art-abc123.webp')).headers.get('content-type')).toBe('image/webp');
     expect((await request('/assets/art-still-abc123.png')).headers.get('content-type')).toBe('image/png');
+  });
+
+  it('serves the icons and the web manifest, and lets the page load the manifest', async () => {
+    const { request } = setup();
+    expect((await request('/favicon.ico')).headers.get('content-type')).toBe('image/x-icon');
+    const manifest = await request('/site.webmanifest');
+    expect(manifest.headers.get('content-type')).toBe('application/manifest+json');
+    expect(manifest.headers.get('content-security-policy')).toContain("manifest-src 'self'");
   });
 
   it('never serves files outside the app folder, and answers what is not there with a JSON 404', async () => {

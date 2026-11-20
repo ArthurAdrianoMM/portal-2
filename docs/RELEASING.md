@@ -1,6 +1,6 @@
 # Releasing
 
-npm is the single channel. Every way of running this project starts from the npm package: `npx`, a global install, the MCP client configs, and the `.mcpb` bundle attached to each GitHub Release.
+npm is the release channel. Every way of running this project on your own computer starts from the npm package: `npx`, a global install, the MCP client configs, and the `.mcpb` bundle attached to each GitHub Release. The hosted server is the exception: it is built from the repository ([HOSTING.md](HOSTING.md#running-it)).
 
 A release is a version tag. Pushing it runs [.github/workflows/release.yml](../.github/workflows/release.yml), which tests, builds, publishes to npm and creates the GitHub Release. Nothing is published from a laptop after the first version.
 
@@ -73,6 +73,7 @@ The workflow publishes it under the npm tag `next`, and marks the GitHub Release
 | `npx portal-2@latest serve` | On its own, the same way. |
 | `npm install -g portal-2` | `npm install -g portal-2@latest`. `serve` prints a notice when a newer release exists ([src/cli/update-check.ts](../src/cli/update-check.ts)). |
 | Claude Desktop (`.mcpb`) | Download the new bundle from the latest GitHub Release and open it. |
+| The hosted server | Whoever runs it: `git pull && docker compose up -d --build`. It runs `main`, so it can be ahead of npm. |
 
 That's why the docs always write `@latest`. After `1.0.0`, `@1` is the safer choice: updates, but never a breaking one.
 

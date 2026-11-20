@@ -17,6 +17,7 @@ import {
   type Operation,
 } from '../operations/index.js';
 import { VERSION } from '../version.js';
+import { ICONS } from './icons.js';
 import { INSTRUCTIONS } from './instructions.js';
 import { errorResult, fileResult, fileUri, jsonResult } from './results.js';
 import { pathsToTools, toolConfig } from './tools.js';
@@ -32,7 +33,13 @@ export interface McpDeps {
   operations?: readonly Operation[];
 }
 
-export const SERVER_INFO = { name: 'portal-2', title: 'Portal 2', version: VERSION };
+export const SERVER_INFO = {
+  name: 'portal-2',
+  title: 'Portal 2',
+  version: VERSION,
+  icons: ICONS,
+  websiteUrl: 'https://github.com/ArthurAdrianoMM/portal-2',
+};
 
 export function createMcpServer(deps: McpDeps): McpServer {
   const { session, log = (line: string) => console.error(line) } = deps;

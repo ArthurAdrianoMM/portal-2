@@ -31,7 +31,7 @@ export function lerDisciplinas(session: PortalSession, { apenasEmCurso = false, 
 
 /**
  * One class of the enrollment, by `IDTURMADISC`. The per-class endpoints take
- * IDs from this list only, never IDs the portal didn't give (INTENT.md); a
+ * IDs from this list only, never IDs the portal didn't give (README, "Scope and rules"); a
  * class of another period is `item_inexistente`.
  */
 export async function buscarDisciplina(session: PortalSession, idTurmaDisc: number, periodo?: string): Promise<DisciplinaRow> {

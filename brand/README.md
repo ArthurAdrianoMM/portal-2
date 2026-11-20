@@ -11,25 +11,26 @@ Use the wordmark where there is room (headers, README, slides). Use the symbol w
 
 ## Files
 
-All files are vector SVG with every shape as a path (no live text, no images, no filters).
+The SVGs have every shape as a path (no live text, no images, no filters). The PNGs and the ICO are renders of them.
 
 | Folder | File | Use |
 |---|---|---|
 | `symbol/` | `portal2-symbol-color.svg` | Main symbol, on light backgrounds |
-| | `portal2-symbol-reversed.svg` | On dark backgrounds (the docs page) |
+| | `portal2-symbol-reversed.svg` | On dark backgrounds (the web app) |
 | | `portal2-symbol-black.svg` / `-white.svg` | One colour: print, stamps, embossing |
-| | `portal2-symbol-small-color.svg` / `-small-reversed.svg` | Small-size cut for 32 px and below: wider gap and thicker bar |
-| | `portal2-app-icon.svg` | Small cut on a dark rounded tile |
+| | `portal2-app-icon.svg` | Main symbol, reversed, on a dark rounded tile |
+| | `portal2-app-icon-512.png` | The app icon at 512 px: the Claude Desktop bundle's icon (`scripts/pack-mcpb.ts`) |
 | `wordmark/` | `portal2-wordmark-color.svg` | Main wordmark, on light backgrounds |
 | | `portal2-wordmark-reversed.svg` | On dark backgrounds |
 | | `portal2-wordmark-black.svg` / `-white.svg` | One colour |
 | `web/` | `favicon.svg`, `favicon.ico`, `favicon-16/32/48.png` | Browser tab: dark tile, readable on light and dark tab bars |
 | | `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, `maskable-512.png` | Home screen / PWA |
 | | `site.webmanifest`, `head-snippet.html` | Copy the tags in the snippet into the page `<head>` |
+| `social/` | `portal2-og.png` | Link preview, 1200×630: the site's `og:image` and the GitHub repo's social preview |
 
 ## Colour
 
-The colours are the docs page's own tokens (`web/src/styles/tokens.css`).
+The colours are the web app's own tokens (`web/src/styles/tokens.css`).
 
 | Role | HEX | RGB | Token |
 |---|---|---|---|
@@ -45,13 +46,13 @@ The colours are the docs page's own tokens (`web/src/styles/tokens.css`).
 
 - **Wordmark:** "ortal" is Saira SemiBold, converted to outlines. The P and the 2 are drawn custom from the symbol's geometry, at Saira's stem weight (horizontal strokes about 12 % thinner, as in Saira).
 - **Spacing** is set by eye from the shapes, not by the font's default spacing. The gaps between the letters' ink, in font units at 1000 per em: P–o 44, o–r 92, r–t 64, t–a 64, a–l 112, l–2 240. Don't re-set the word in live type: use the SVG.
-- **Text next to the logo** (taglines, UI): Lexend, the docs page font.
+- **Text next to the logo** (taglines, UI): Lexend, the web app's font.
 - Saira and Lexend are under the SIL Open Font License, which allows use in a logo.
 
 ## Clear space and minimum size
 
 - **Clear space:** keep a margin around the logo equal to the width of the P's stem: 40 units on the symbol's 256 grid, about 1/6 of the symbol's height. For the wordmark, use the stem of its P.
-- **Symbol:** use the small cut at 32 px and below. It still holds at 16 px (`favicon-16.png`).
+- **Symbol:** one geometry at every size, down to 16 px (`favicon-16.png`).
 - **Wordmark:** at least 20 px tall on screen and 8 mm in print. Below that, use the symbol.
 
 ## Don't
@@ -64,5 +65,9 @@ The colours are the docs page's own tokens (`web/src/styles/tokens.css`).
 
 ## Notes
 
-- **Trademark:** "Portal 2" is also the name of Valve's video game. Before publishing under this name (npm, a domain, an app store), check the trademark position or consider a different name; the P2 symbol works without the words.
-- **Integration:** the files here are not wired into the app yet. The current favicon is `web/public/favicon.svg`, and the topbar mark is `.brand__mark` in `web/src/components/TopBar.tsx` and `LoginPage.tsx`.
+- **Trademark:** "Portal 2" is also the name of Valve's video game. The project is published under this name (the npm package and portal2.arthuradriano.com) without checking the trademark position. That is an open risk; if it comes up, the P2 symbol works without the words.
+- **Where it is used:**
+  - The web app: the icons and the link preview are copies in `web/public/` (tags in `web/index.html`), and the wordmark in the top bar and on the login page is `web/src/components/Wordmark.tsx`, drawn from `portal2-wordmark-reversed.svg`. Change a file here, then copy it there.
+  - The MCP server's icon (`src/mcp/icons.ts`) inlines `web/favicon.svg` and `web/favicon-48.png`.
+  - The README header loads the wordmarks from GitHub (`main`).
+  - The GitHub repo's social preview is `social/portal2-og.png`, uploaded by hand in the repo settings.

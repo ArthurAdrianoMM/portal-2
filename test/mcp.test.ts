@@ -55,6 +55,15 @@ const ARGS: Record<string, Record<string, unknown>> = {
   baixarMaterial: { idMaterial: 3150 },
 };
 
+describe('server info', () => {
+  it('names the server and carries its icon inline, as SVG and PNG', async () => {
+    const info = (await connect(demo())).getServerVersion();
+    expect(info).toMatchObject({ name: 'portal-2', title: 'Portal 2' });
+    expect(info?.icons?.map((icon) => icon.mimeType)).toEqual(['image/svg+xml', 'image/png']);
+    for (const icon of info?.icons ?? []) expect(icon.src.startsWith(`data:${icon.mimeType};base64,`)).toBe(true);
+  });
+});
+
 describe('tools', () => {
   it('has one tool per operation, named by its id, read-only', async () => {
     const client = await connect(demo());

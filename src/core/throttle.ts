@@ -2,7 +2,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 
 /**
  * Spaces out task starts by at least `minIntervalMs`, in call order. Keeps the
- * request rate close to one student's browser (INTENT.md, "How the API will behave").
+ * request rate close to one student's browser.
  */
 export function createThrottle(minIntervalMs: number) {
   let queue: Promise<void> = Promise.resolve();

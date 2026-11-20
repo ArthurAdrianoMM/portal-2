@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState, type FocusEvent, type KeyboardEvent } from 'react';
 import { API, loginHref, type Connection, type Route } from '../state';
 import { ChevronDownIcon, DownloadIcon, LogOutIcon, SearchIcon, UserIcon } from './Icons';
+import { Wordmark } from './Wordmark';
 
 function words(nome: string): string[] {
   return nome.trim().split(/\s+/).filter(Boolean);
@@ -175,10 +176,7 @@ export function TopBar({ title, version, query, onQuery, onSubmitQuery, connecti
   return (
     <header className="topbar" ref={header}>
       <a className="brand" href="#/">
-        <span className="brand__mark" aria-hidden="true">
-          p2
-        </span>
-        <span className="brand__name">{title}</span>
+        <Wordmark title={title} />
         <span className="brand__version">v{version}</span>
       </a>
 

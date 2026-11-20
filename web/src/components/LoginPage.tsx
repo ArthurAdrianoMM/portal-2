@@ -3,6 +3,7 @@ import art from '../assets/study-breeze-gold-vazado.webp';
 import artStill from '../assets/study-breeze-gold-vazado-still.png';
 import type { Connection } from '../state';
 import { ArrowRightIcon, EyeIcon, EyeOffIcon, LockIcon, ShieldIcon, SpinnerIcon, UserIcon } from './Icons';
+import { Wordmark } from './Wordmark';
 
 interface LoginPageProps {
   title: string;
@@ -33,10 +34,7 @@ export function LoginPage({ title, version, connection, voltar }: LoginPageProps
     <div className="login">
       <aside className="login__side">
         <a className="brand" href={voltar}>
-          <span className="brand__mark" aria-hidden="true">
-            p2
-          </span>
-          <span className="brand__name">{title}</span>
+          <Wordmark title={title} />
           <span className="brand__version">v{version}</span>
         </a>
       </aside>

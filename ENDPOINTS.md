@@ -2,7 +2,7 @@
 
 Target: `https://senaiweb6.fieb.org.br`. TOTVS RM Portal Educacional v12.1.15. The login page is AngularJS, and the logged-in student app is Angular with lazy-loaded feature modules.
 
-Purpose and scope: see [INTENT.md](INTENT.md).
+Purpose and scope: see [Scope and rules](README.md#scope-and-rules) in the README.
 
 ## How this map was built
 
@@ -343,7 +343,7 @@ All academic pages listed in the menu are now mapped (sections 4.5 to 4.9). The 
 3. ~~Check the `Contexto/Selecao` request body.~~ Not needed: the context cookie alone switches enrollments (section 2.4).
 4. Find the session lifetime. Session expiry was observed (section 3), but the timing was not measured.
 5. Re-check `Widget/DadosWidgets` for `idFuncionalidade` 2, 3, 4, 5 and 11 separately. Only ID 6 has been checked alone.
-6. Build the API on the verified GET endpoints in section 4, plus `Periodos` and `DisciplinasAlunoPeriodoLetivo`.
+6. ~~Build the API on the verified GET endpoints in section 4, plus `Periodos` and `DisciplinasAlunoPeriodoLetivo`.~~ Done: `src/operations`.
 7. Only the login flow, `getcurrentuser`, `Contexto`, `NotaEtapa`, `FaltaEtapa` and `Aluno/Falta/Aula` have been checked from outside the browser (curl or the API's own client). The other academic endpoints were checked in the browser, where the context cookie was already set. They probably need the cookie too. Confirm each one from outside the browser.
 8. ~~Check whether setting the context cookie to another enrollment's `IDCONTEXTOALUNO` is enough to switch periods.~~ Resolved 2026-11-03: it is (section 2.4). The period-scoped endpoints take `periodo`.
 
@@ -360,7 +360,7 @@ The client does not assume an answer to these. Each one notes what the code does
 7. ~~**`Aluno/Falta/Aula` window bounds.**~~ Resolved 2026-10-29: the portal compares dates only. A window of noon to noon on one day returned that day's absences. `/faltas/aulas` still sends the start of `de` and the end of `ate` in local time. Still not recorded: values of `JUSTIFICADAPERSONALIZADO` and `ABONAFALTAPERSONALIZADO` other than `Não` and empty. The API passes their text on as is.
 8. **Lesson files (`SPLANOAULAARQUIVO`).** Always empty so far, so the item types are not recorded. `/aulas` reads the fields the page uses, all optional.
 
-The first run against the real portal (`npm run try -- notas`) answers items 1 to 6. Update this section with what it shows.
+When one of these shows up, record it here and tighten the code to match.
 
 ## 8. Operating notes for the API
 
