@@ -31,6 +31,7 @@ const manifest = {
     'Projeto de aula, não oficial. Sem vínculo com o SENAI ou a FIEB.',
   author: { name: 'ArthurAdrianoMM', url: 'https://github.com/ArthurAdrianoMM' },
   repository: { type: 'git', url: 'https://github.com/ArthurAdrianoMM/portal-2' },
+  icon: 'icon.png',
   server: {
     type: 'node',
     entry_point: 'dist/cli/main.js',
@@ -72,6 +73,7 @@ try {
     filter: (src) => src !== web && !src.startsWith(web + sep),
   });
   for (const file of ['package.json', 'package-lock.json']) cpSync(join(ROOT, file), join(stage, file));
+  cpSync(join(ROOT, 'brand', 'symbol', 'portal2-app-icon-512.png'), join(stage, 'icon.png'));
   execFileSync('npm', ['ci', '--omit=dev', '--ignore-scripts', '--no-audit', '--no-fund'], { cwd: stage, stdio: 'inherit' });
 
   writeFileSync(join(stage, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);

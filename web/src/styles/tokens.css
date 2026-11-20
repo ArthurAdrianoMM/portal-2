@@ -1,7 +1,7 @@
 /*
  * Design tokens, from the design canvas (Midnight Sky, dark).
  * `*-rgb` triplets are for translucent fills: rgb(var(--gold-rgb) / 0.1).
- * `--gold` fills (primary button, brand mark, active tab); `--accent` is the
+ * `--gold` fills (primary button, the 2 in the logo, active tab); `--accent` is the
  * accent as text (links, overlines, focus).
  */
 :root {

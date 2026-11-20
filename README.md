@@ -1,26 +1,40 @@
-# Portal 2
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/ArthurAdrianoMM/portal-2/main/brand/wordmark/portal2-wordmark-reversed.svg">
+    <img alt="Portal 2" src="https://raw.githubusercontent.com/ArthurAdrianoMM/portal-2/main/brand/wordmark/portal2-wordmark-color.svg" width="284">
+  </picture>
+</h1>
 
-A read-only API for your own data in the SENAI Portal do Aluno. It runs on your computer and talks to the portal with your account. No other server is involved, apart from npm: the one place it's installed and updated from.
+Your own data from the SENAI Portal do Aluno (notas, faltas, horário, aulas, calendário, materiais) as a read-only API, a web app and tools for AI agents (MCP).
 
-Class project, not official, not affiliated with SENAI or FIEB. Scope and limits: [INTENT.md](INTENT.md). What the portal exposes: [ENDPOINTS.md](ENDPOINTS.md). The MCP server's design: [docs/MCP.md](docs/MCP.md). One server, local or hosted: [docs/HOSTING.md](docs/HOSTING.md).
+Use it online at **[portal2.arthuradriano.com](https://portal2.arthuradriano.com)**, with nothing to install, or run the same server on your computer, where your password never leaves it.
+
+Unofficial and open source. Not affiliated with SENAI, FIEB or TOTVS.
+
+More: what the portal exposes, [ENDPOINTS.md](ENDPOINTS.md) · the MCP server, [docs/MCP.md](docs/MCP.md) · one server, local or hosted, [docs/HOSTING.md](docs/HOSTING.md) · releases, [docs/RELEASING.md](docs/RELEASING.md).
 
 ## Status
 
 - [x] Core client: login, context cookie, re-login on expiry, rate limit (`src/core`)
 - [x] Operations: `/eu`, `/eu/foto`, `/periodos`, `/disciplinas`, `/notas`, `/faltas`, `/faltas/aulas`, `/horario`, `/aulas`, `/disciplinas/{idTurmaDisc}/aulas`, `/disciplinas/{idTurmaDisc}/aulas/{idPlanoAula}`, `/disciplinas/{idTurmaDisc}/etapas`, `/calendario`, `/grade-curricular`, `/materiais`, `/disciplinas/{idTurmaDisc}/materiais`, `/materiais/{idMaterial}/arquivo`, `/avaliacoes-institucionais` (`src/operations`)
 - [x] OpenAPI 3.1 document generated from the operations ([openapi.json](openapi.json))
-- [x] Server (`portal-2 serve`): the web app at `/`, the API under `/api`, MCP at `/mcp`
+- [x] One server (`portal-2 serve`): the web app at `/`, the API under `/api`, MCP at `/mcp`
 - [x] Web app with the API docs and "testar", built from `openapi.json` (`web/`)
 - [x] Sessions in a cookie or a bearer; "Lembrar de mim" keeps one for 30 days, the password encrypted by its own token
-- [x] MCP server for AI agents, over stdio (`portal-2 mcp`) and HTTP (`/mcp`). Phases: [docs/MCP.md](docs/MCP.md)
-- [x] Hosting with Docker and a Cloudflare Tunnel: `docker compose up -d` ([docs/HOSTING.md](docs/HOSTING.md#running-it))
-- [ ] OAuth for Claude.ai and ChatGPT ([docs/HOSTING.md](docs/HOSTING.md))
+- [x] MCP server, over stdio (`portal-2 mcp`) and HTTP (`/mcp`)
+- [x] Hosting with Docker and a Cloudflare Tunnel, live at [portal2.arthuradriano.com](https://portal2.arthuradriano.com)
+- [ ] OAuth, so Claude.ai and ChatGPT can connect ([docs/HOSTING.md](docs/HOSTING.md#3-oauth-for-claudeai-and-chatgpt), step 3)
+- [ ] Hardening: Turnstile and limits on failed logins (step 4)
 
-## Requirements
+## Use it online
 
-Node.js 22.19 or newer.
+Open [portal2.arthuradriano.com](https://portal2.arthuradriano.com). Every endpoint, schema and example is there without an account. To send requests with your data, log in with your portal user and password.
 
-## Use
+Your password goes through that server to reach the portal. What the server does with it is in the [Política de privacidade](https://portal2.arthuradriano.com/#/privacidade). If you'd rather it never left your computer, run the server yourself.
+
+## Run it on your computer
+
+Needs Node.js 22.19 or newer.
 
 ```sh
 npx portal-2@latest serve
@@ -36,15 +50,17 @@ portal-2 serve
 
 When a newer release is on npm, `serve` says so at startup and prints the command that updates it. `NO_UPDATE_NOTIFIER=1` turns that check off.
 
-It prints the local address, which opens the web app. It works without an account: every endpoint, schema and example is there. To send requests with your data, click the user icon in the top right and log in with your portal user and password. Without "Lembrar de mim", the login lasts until you close the browser or the server restarts. With it, it lasts 30 days, restarts included: the session is saved in `~/.portal-2` (or `PORTAL2_DATA_DIR`), with the password encrypted by a key that only your session's token derives.
+It prints the local address, which opens the web app:
 
 ```
 Rodando em http://127.0.0.1:4321/
 ```
 
+Log in with the user icon in the top right. Without "Lembrar de mim", the login lasts until you close the browser or the server restarts. With it, it lasts 30 days, restarts included: the session is saved in `~/.portal-2` (or `PORTAL2_DATA_DIR`), with the password encrypted by a key that only your session's token derives. Locally, no other server is involved, apart from npm, where it's installed and updated from.
+
 Endpoints that answer for one enrollment (`/disciplinas` and its lessons, `/notas`, `/faltas`, `/faltas/aulas`, `/horario`, `/aulas`) use the most recent one, or the one given with `--period`. Pass `periodo` with a code from `/periodos` to ask about another, for example `/api/notas?periodo=2026S1`.
 
-From other tools, log in with `POST /api/sessao` (`{"usuario": "…", "senha": "…"}` as JSON, plus `"lembrar": true` for a session that lasts 30 days) and send the returned token as `Authorization: Bearer <token>`. The web app also has a "Copiar token" button. Each login opens its own session; `DELETE /api/sessao` ends the one that sends it.
+From other tools, log in with `POST /api/sessao` (`{"usuario": "…", "senha": "…"}` as JSON, plus `"lembrar": true` for a session that lasts 30 days) and send the returned token as `Authorization: Bearer <token>`. The web app also has a "Copiar token" button. Each login opens its own session; `DELETE /api/sessao` ends the one that sends it. This works the same on the hosted server.
 
 With `PORTAL_ALUNO_USER` and `PORTAL_ALUNO_PASSWORD` set, the server logs in at startup instead and prints a link that already carries the token:
 
@@ -57,9 +73,11 @@ Token:      …
 
 ## Use with AI agents (MCP)
 
-`portal-2 mcp` is an [MCP](https://modelcontextprotocol.io) server: every operation of the API becomes a tool that Claude, Codex, Cursor, VS Code and other agents can call. The client starts it on your computer; it talks to the portal with your account, like `serve`.
+Every operation of the API is also an [MCP](https://modelcontextprotocol.io) tool that Claude, Codex, Cursor, VS Code and other agents can call. Every tool only reads, and says so to the client (`readOnlyHint`), so most clients run them without asking each time.
 
-It reads your portal user and password from `PORTAL_ALUNO_USER` and `PORTAL_ALUNO_PASSWORD`, which the client passes to it. It starts without contacting the portal and logs in on the first tool call, so a missing variable or a wrong password shows up in the chat as an error the agent can explain. After the portal refuses the password once, it stops trying until restarted, so it can't lock your account.
+### On your computer (stdio)
+
+`portal-2 mcp` is started by the client on your computer and talks to the portal with your account, like `serve`. It reads your portal user and password from `PORTAL_ALUNO_USER` and `PORTAL_ALUNO_PASSWORD`, which the client passes to it. It starts without contacting the portal and logs in on the first tool call, so a missing variable or a wrong password shows up in the chat as an error the agent can explain. After the portal refuses the password once, it stops trying until restarted, so it can't lock your account.
 
 The setups below run `npx -y portal-2@latest mcp`, so every time the client starts the server it gets the newest release. Without `@latest`, npx may keep a cached old version.
 
@@ -115,35 +133,49 @@ env = { PORTAL_ALUNO_USER = "<usuário>", PORTAL_ALUNO_PASSWORD = "<senha>" }
 
 Add `"--period", "2026S1"` after `"mcp"` to answer about another enrollment by default.
 
-**Over HTTP, with `serve` running.** `serve` also answers MCP at `/mcp`, for the session of a token. Log in on the web app with "Lembrar de mim", so the session lasts 30 days, and copy its token ("Copiar token"):
+Except for Claude Desktop and VS Code, the client keeps the password in its config file, in plain text. That file is yours, and nothing in this project writes it.
+
+### Over HTTP (`/mcp`)
+
+The server, online or on your computer, also answers MCP at `/mcp`, for the session of a token. Log in on the web app with "Lembrar de mim", so the session lasts 30 days, and copy its token ("Copiar token"):
 
 ```sh
-claude mcp add --transport http portal-2 http://127.0.0.1:4321/mcp --header "Authorization: Bearer <token>"
+claude mcp add --transport http portal-2 https://portal2.arthuradriano.com/mcp --header "Authorization: Bearer <token>"
 ```
 
-Clients that take JSON use `{"type": "http", "url": "http://127.0.0.1:4321/mcp", "headers": {"Authorization": "Bearer <token>"}}`. Logging out on the web app ends that session, for the client too.
+With `serve` running locally, use `http://127.0.0.1:4321/mcp` instead. Clients that take JSON use `{"type": "http", "url": "…/mcp", "headers": {"Authorization": "Bearer <token>"}}`. Logging out on the web app ends that session, for the client too.
 
-Except for Claude Desktop and VS Code, the client keeps the password in its config file, in plain text. That file is yours, and nothing in this project writes it. ChatGPT on the web only connects to servers on the internet, so it can't use this one.
+Claude.ai and ChatGPT on the web can't send a header, so they need OAuth, which isn't built yet ([step 3](docs/HOSTING.md#3-oauth-for-claudeai-and-chatgpt)).
 
-Every tool only reads. The tools say so to the client (`readOnlyHint`), so most clients run them without asking each time.
+## Hosting your own
 
-## Hosting it
+The same server runs on any machine with Docker: `docker compose up -d`, behind a Cloudflare Tunnel, configured by `PUBLIC_URL` in a `.env`. No port opens to the internet. Step by step: [docs/HOSTING.md](docs/HOSTING.md#running-it).
 
-The same server runs on your own machine for people who'd rather not install anything: `docker compose up -d`, behind a Cloudflare Tunnel, configured by `PUBLIC_URL` in a `.env`. No port opens to the internet. Step by step: [docs/HOSTING.md](docs/HOSTING.md#running-it).
+## Scope and rules
 
-## How the local server stays local
+- Each person reads their own account only, and only what they can already see in the portal.
+- Read-only. It calls only endpoints the portal's own frontend calls, only with GET apart from the login, and changes nothing: no password, profile, enrollment or payment. Never `Logout` or `Contexto/Selecao`.
+- No payment or card endpoints ([ENDPOINTS.md](ENDPOINTS.md), section 5).
+- No guessed IDs. IDs come from the portal's own answers, never from trying numbers in a sequence.
+- If the portal refuses a request (403), the refusal is passed on. There is no retry another way.
+- The password is sent only to the configured portal origin. The core never stores it: it asks a credentials provider whenever it needs to log in.
+- No personal values in logs, errors or examples. Error messages name fields and types, never values from the portal.
 
-- It listens on `127.0.0.1` only.
+## Security
+
+The same protections apply locally and hosted ([docs/HOSTING.md](docs/HOSTING.md#protections-the-same-everywhere)).
+
+- Locally, it listens on `127.0.0.1` only. `HOST` changes that, for a container.
 - Every API route and `/mcp` need a session: the web app's cookie, or a token as `Authorization: Bearer`. `/`, `/api/openapi.json` and `/health` don't, and none of them carry personal data.
 - Requests that change something (logging in or out, `/mcp`) are refused when their `Origin` is another site, so a page open in the browser can't log you in or out, or use your session. The login takes JSON only.
-- It answers only when the `Host` header is `127.0.0.1:<port>` or `localhost:<port>` (or the host of `PUBLIC_URL`, when hosted), which blocks DNS-rebinding attacks.
+- It answers only when the `Host` header is its own address (`127.0.0.1:<port>` or `localhost:<port>` locally, the host of `PUBLIC_URL` when hosted), which blocks DNS-rebinding attacks.
 - It sends no CORS headers, so other sites open in your browser can't read its responses.
 - The web app is built into `dist/web` and served by this server, fonts included (no CDN). Its Content-Security-Policy allows scripts, styles and requests only to this server, with no inline code.
-- The password goes from the page to this server and from here to the portal only. The server keeps it in memory, to log in again when the portal expires the session, and never logs it. Only "Lembrar de mim" writes it to disk: in `sessions.json` (mode `0600`), encrypted with AES-256-GCM by a key derived from that session's token, which the server doesn't keep. If the portal refuses a saved password, the session ends and the password is never sent again. Details: [docs/HOSTING.md](docs/HOSTING.md).
+- The password goes from the page to the server and from there to the portal only. The server keeps it in memory, to log in again when the portal expires the session, and never logs it. "Lembrar de mim" also saves it in `sessions.json` (mode `0600`), encrypted with AES-256-GCM by a key derived from that session's token, which the server doesn't keep. If the portal refuses a saved password, the session ends and the password is never sent again. Details: [docs/HOSTING.md](docs/HOSTING.md#sessions).
 - The page keeps the session in an `HttpOnly` cookie, which its scripts can't read, and stores no token. A token from the startup link reaches the page in the `#hash`, which browsers never send to servers, is exchanged for the cookie and removed from the address bar.
 - Files from the portal (materials, the profile photo) are sent as `attachment` with `Content-Security-Policy: default-src 'none'; sandbox`, so a file can never run as a page of this server, where the session lives. The web app allows `blob:` images only to preview a photo it downloaded itself.
-- The request log has method, path, status and time. No query strings, no bodies.
-- At startup it asks the npm registry for the latest version of `portal-2`, to tell you about updates. The request carries nothing but the package name, and `NO_UPDATE_NOTIFIER=1` turns it off. `mcp` never makes it.
+- The request log has method, path, status and time. No query strings, bodies, tokens or IP addresses.
+- At startup, `serve` asks the npm registry for the latest version of `portal-2`, to tell you about updates. The request carries nothing but the package name, and `NO_UPDATE_NOTIFIER=1` turns it off (the Docker image sets it). `mcp` never makes it.
 
 ## Development
 
@@ -163,6 +195,7 @@ Work on the web app without logging in to the real portal:
 ```sh
 npm run dev:fake    # the real server against the fake portal (made-up data); prints links that log you in
                     # PORT=4399 npm run dev:fake for another port
+                    # PUBLIC_URL=http://portal.localhost:4321 npm run dev:fake shows the hosted version of the pages
 npm run dev:web     # in another terminal: the app with hot reload; open the localhost:5173 link dev:fake printed
                     # the login screen accepts the fake account: aluno.teste / s3nha&com=símbolos
 ```
@@ -174,8 +207,6 @@ npm run -s dev:mcp:fake                     # MCP server on stdio, made-up data;
 npm run -s dev:mcp:fake -- --senha-errada   # the same, with a refused login
 claude mcp add portal-2-fake -- npm --prefix "$PWD" run -s dev:mcp:fake
 ```
-
-CI runs the typecheck, the tests and the build on every pull request. Releases are a version tag; see [docs/RELEASING.md](docs/RELEASING.md).
 
 In the [MCP Inspector](https://github.com/modelcontextprotocol/inspector), connect to the command `npm run -s dev:mcp:fake` in this folder. Don't give the Inspector your real credentials: it saves the `env` values of stdio servers.
 
@@ -207,6 +238,8 @@ npm run probe -- TOTVSEducacional/Periodos 'TOTVSEducacional/DisciplinasAlunoPer
 npm run probe -- TOTVSEducacional/Aluno/CalendarioAluno --values EVENTTYPE,LABEL
 ```
 
+CI runs the typecheck, the tests and the build on every pull request (Node 22, 24 and 26, plus Windows), and builds and smoke-tests the Docker image. Releases are a version tag; see [docs/RELEASING.md](docs/RELEASING.md).
+
 ## Layout
 
 ```
@@ -225,15 +258,18 @@ src/
   http/          the server (Hono): web app, /api routes, sessions (cookie or bearer; remembered ones
                  saved encrypted), /mcp, errors (docs/HOSTING.md)
   mcp/           the MCP server: operations as tools, results, the stdio session (docs/MCP.md)
-  cli/           `portal-2` command (serve, mcp) and terminal prompts
-  env.ts         what the commands read from the environment: credentials, data folder
+  cli/           `portal-2` command (serve, mcp), update check and terminal prompts
+  env.ts         what the commands read from the environment: credentials, HOST, PORT, PUBLIC_URL, data folder
 web/             the web app (React + Vite). Reads /api/openapi.json; knows nothing else about the API
   src/lib/       pure logic: spec model, Markdown subset, fields, samples, search (tested in test/web.test.ts)
+  src/content/   the Termos de uso and the Política de privacidade: change them when what the server does changes
   src/components/
 scripts/         dev runner (try.ts), shape probe (probe.ts), openapi.json writer, fake-portal servers (fake-serve.ts,
                  fake-mcp.ts, with demo-portal.ts), Claude Desktop bundle (pack-mcpb.ts)
-docs/            design notes (MCP.md, HOSTING.md, RELEASING.md)
 test/            Vitest, with an in-memory fake portal (test/support) and made-up portal answers (test/fixtures)
+docs/            design notes (MCP.md, HOSTING.md, RELEASING.md)
+brand/           the logo (not wired into the app yet)
+Dockerfile, compose.yaml, .env.example   the hosted server (docs/HOSTING.md)
 ```
 
 ### Adding an endpoint
@@ -243,14 +279,6 @@ test/            Vitest, with an in-memory fake portal (test/support) and made-u
 3. Register it in `src/operations/index.ts`.
 4. Add a test in `test/operations.test.ts` using `academicRoute` from the fake portal.
 5. Run `npm run openapi`. The route, the MCP tool, the web app and the spec update from the definition. If the operation answers for one of the demo portal's routes, add it to `scripts/demo-portal.ts`, and its required arguments to `ARGS` in `test/mcp.test.ts`.
-
-## Rules the code follows
-
-- Only GET requests to the API. Never `Logout` or `Contexto/Selecao`.
-- The password is only sent to the configured portal origin, and the core never stores it. It's asked for through the credentials provider whenever a login is needed; the local server's provider holds it in memory for the life of the login.
-- Cookies live in memory. Nothing is written to disk or logged.
-- Error messages name fields and types, never values from the portal.
-- If the portal refuses a request (403), the error is passed on. There is no retry another way.
 
 ## License
 

@@ -351,23 +351,14 @@ kbd {
 .brand:hover {
   color: var(--text-1);
 }
-.brand__mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: var(--gold);
-  color: var(--on-accent);
-  font-family: var(--font-mono);
-  font-weight: 500;
-  font-size: 13px;
+/* The logo (Wordmark.tsx). 22px tall puts the P's cap height at 20px, the logo's minimum on screen. */
+.wordmark {
+  display: block;
+  height: 22px;
+  width: auto;
 }
-.brand__name {
-  font-weight: 500;
-  font-size: 16px;
-  letter-spacing: -0.01em;
+.wordmark__two {
+  fill: var(--gold);
 }
 .brand__version {
   font-family: var(--font-mono);

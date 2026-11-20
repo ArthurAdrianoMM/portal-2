@@ -16,6 +16,10 @@ export interface LegalDocument {
 const UPDATED = '19 de novembro de 2026';
 const ISSUES = 'https://github.com/ArthurAdrianoMM/portal-2/issues';
 const SOURCE = 'https://github.com/ArthurAdrianoMM/portal-2';
+/** Who answers for the hosted server, and where to reach them privately. */
+const CONTROLLER = 'Arthur Adriano Mendes Machado';
+const CONTACT = 'arthuradrianomm@gmail.com';
+const DOMAIN = 'portal2.arthuradriano.com';
 
 export const LEGAL: Record<LegalId, LegalDocument> = {
   termos: {
@@ -27,6 +31,8 @@ export const LEGAL: Record<LegalId, LegalDocument> = {
       {
         heading: 'O que é',
         text: `Um projeto pessoal, de código aberto, **sem vínculo com o SENAI, a FIEB ou a TOTVS**. Ele entra no Portal do Aluno com a sua conta e só lê: nenhuma rota altera nada no portal.
+
+Ele é mantido por ${CONTROLLER}, pessoa física.
 
 O código está em [github.com/ArthurAdrianoMM/portal-2](${SOURCE}). Quem prefere que a senha não saia do próprio computador pode rodar o mesmo servidor em casa, com \`npx portal-2 serve\`.`,
       },
@@ -47,7 +53,7 @@ O código está em [github.com/ArthurAdrianoMM/portal-2](${SOURCE}). Quem prefer
       },
       {
         heading: 'Mudanças e contato',
-        text: `Quando estes termos mudarem, a data no topo muda junto. Dúvidas e problemas: [abra uma issue](${ISSUES}). Estes termos seguem a lei brasileira.`,
+        text: `Quando estes termos mudarem, a data no topo muda junto. Dúvidas e problemas: [abra uma issue](${ISSUES}). Assuntos que envolvem os seus dados ou a sua conta: **${CONTACT}**. Estes termos seguem a lei brasileira.`,
       },
     ],
   },
@@ -55,14 +61,23 @@ O código está em [github.com/ArthurAdrianoMM/portal-2](${SOURCE}). Quem prefer
   privacidade: {
     title: 'Política de privacidade',
     updated: UPDATED,
-    intro:
-      'O que o Portal 2 faz com os seus dados, de acordo com a Lei Geral de Proteção de Dados (LGPD). Em resumo: ele usa a sua senha só para entrar no portal, não guarda os seus dados acadêmicos e não tem rastreadores.',
+    intro: `O que o Portal 2 faz com os seus dados, de acordo com a Lei Geral de Proteção de Dados (LGPD). Em resumo: ele usa a sua senha só para entrar no portal, não guarda os seus dados acadêmicos e não tem rastreadores. Esta política vale para o servidor mantido pelo autor do projeto, em ${DOMAIN}.`,
     sections: [
+      {
+        heading: 'Quem é o responsável',
+        text: `O controlador dos dados é **${CONTROLLER}**, pessoa física, autor do Portal 2. Para qualquer assunto sobre os seus dados, escreva para **${CONTACT}**.
+
+Se outra pessoa hospeda o Portal 2 em outro endereço, quem responde pelos dados ali é ela, não este projeto. Quando você roda \`portal-2 serve\` no seu computador, os dados ficam com você.`,
+      },
       {
         heading: 'O que passa pelo servidor',
         text: `- **Usuário e senha do portal**, para entrar no Portal do Aluno por você.
 - **O que o portal responde**: notas, faltas, horários, materiais, dados pessoais e a foto do perfil. Isso passa pelo servidor só para montar a resposta ao seu pedido. Nada disso é gravado.
 - **Um cookie**, \`portal2_sessao\`, com o token da sessão. Ele é necessário para você continuar logado; scripts da página não conseguem lê-lo.`,
+      },
+      {
+        heading: 'Por que usamos os dados',
+        text: `Para fazer o que você pede: entrar no Portal do Aluno com a sua conta e mostrar os seus dados (LGPD, art. 7º, V). Gravar a senha com "Lembrar de mim" depende do seu consentimento, dado ao marcar a opção (art. 7º, I). Para retirá-lo, clique em **Sair**. Os dados não são usados para nenhuma outra finalidade.`,
       },
       {
         heading: 'A senha',
@@ -76,14 +91,15 @@ O código está em [github.com/ArthurAdrianoMM/portal-2](${SOURCE}). Quem prefer
         heading: 'O que não fazemos',
         text: `- Não guardamos notas, faltas, horários nem outros dados acadêmicos.
 - Não usamos analytics, anúncios ou rastreadores, e nenhum script de terceiros roda na página.
-- Não vendemos nem compartilhamos dados. Os registros do servidor têm só método, caminho, resposta e tempo de cada pedido: sem endereço IP, sem token, sem senha.`,
+- Não vendemos dados nem os passamos a ninguém além dos listados abaixo. Os registros do servidor têm só método, caminho, resposta e tempo de cada pedido: sem endereço IP, sem token, sem senha.`,
       },
       {
         heading: 'Com quem os dados passam',
         text: `- **Portal do Aluno (SENAI e TOTVS)**: recebe o seu login e os pedidos, como faria o seu navegador. Os dados são deles, sob as regras deles.
-- **Cloudflare**, só na versão hospedada: a conexão HTTPS chega primeiro à Cloudflare, que a encaminha ao servidor por um túnel criptografado. Ela processa as requisições, incluindo o login e o endereço IP, sob a [política de privacidade da Cloudflare](https://www.cloudflare.com/privacypolicy/).
+- **Cloudflare**, só na versão hospedada: a conexão HTTPS chega primeiro à Cloudflare, que a encaminha ao servidor por um túnel criptografado. Ela processa as requisições, incluindo o login e o endereço IP, e pode fazer isso em servidores fora do Brasil. Essa transferência é necessária para atender o seu pedido (LGPD, art. 33, IX) e segue a [política de privacidade da Cloudflare](https://www.cloudflare.com/privacypolicy/).
+- **Assistentes de IA que você conectar** (Claude, ChatGPT e outros), pelo \`/mcp\` ou pelo \`portal-2 mcp\`: o que o assistente pede, como notas, faltas e dados pessoais, vai para a empresa que opera o assistente e fica sob a política de privacidade dela, não desta. O Portal 2 só responde ao que o assistente pede, e só enquanto a sessão valer. Conecte apenas assistentes em que você confia.
 
-Quando você roda \`portal-2 serve\` no seu computador, nada disso passa pelo projeto: só você e o portal.`,
+Quando você roda \`portal-2 serve\` no seu computador, nada disso passa pelo projeto: só você e o portal, e os assistentes que você mesmo conectar.`,
       },
       {
         heading: 'Por quanto tempo',
@@ -91,9 +107,9 @@ Quando você roda \`portal-2 serve\` no seu computador, nada disso passa pelo pr
       },
       {
         heading: 'Seus direitos',
-        text: `A LGPD garante a você confirmar, acessar, corrigir e apagar os seus dados. Como quase nada fica guardado, o caminho mais curto é clicar em Sair. Para qualquer outro pedido, [abra uma issue](${ISSUES}) sem incluir dados pessoais, e a gente combina um contato privado.
+        text: `A LGPD garante a você confirmar, acessar, corrigir e apagar os seus dados, e saber com quem eles são compartilhados. Como quase nada fica guardado, o caminho mais curto é clicar em **Sair**, que apaga na hora tudo o que o servidor guardou da sessão. Para qualquer outro pedido, escreva para **${CONTACT}**. Você também pode reclamar à Autoridade Nacional de Proteção de Dados (ANPD).
 
-Se você tem menos de 18 anos, use o serviço com o conhecimento do seu responsável.`,
+O serviço não é destinado a menores de 12 anos. Se você tem entre 12 e 18 anos, use-o com o conhecimento do seu responsável.`,
       },
       {
         heading: 'Mudanças',

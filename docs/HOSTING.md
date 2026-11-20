@@ -2,7 +2,9 @@
 
 How `portal-2 serve` grows from a local API into something that can also be hosted, for people who don't want to install anything, without becoming two programs. The MCP server's own design is in [MCP.md](MCP.md).
 
-Hosting is an alternative, never a replacement. The local server and `npx portal-2 mcp` stay the default, and the option where the password never leaves your computer.
+Hosting is an alternative, never a replacement. The local server and `npx portal-2 mcp` stay the option where the password never leaves your computer.
+
+One instance runs at [portal2.arthuradriano.com](https://portal2.arthuradriano.com), open to any SENAI student, since 2026-11-19. Steps 3 and 4 below are still to come.
 
 ## Intentions
 
@@ -60,7 +62,7 @@ A remembered session is saved to `sessions.json` in the data folder (`PORTAL2_DA
 - When a remembered session is used after a restart, or after 12 hours idle, the server decrypts the credentials with the token that came with the request, logs in again, and keeps the session in memory.
 - The folder is created only when someone ticks "Lembrar de mim", with mode `0700`; the file is written atomically, with mode `0600`. Windows ignores these modes: there, the folder's permissions decide who reads the file, and the default folder is inside your user profile, which other users can't read. Expired sessions are dropped whenever it is written.
 
-What this can't protect: while the server runs, its memory holds the sessions it is using. That is the same as today.
+What this can't protect: while the server runs, its memory holds the sessions it is using.
 
 ### A refused password ends the session
 
@@ -73,6 +75,7 @@ If the portal refuses the saved password (it was changed), the session is delete
 - **No CORS headers:** other sites can't read responses.
 - **CSP on the web app:** scripts, styles and requests only to this server, no inline code.
 - **Files from the portal** are always `attachment`, with a CSP that blocks everything.
+- **HSTS** when the address is `https`, so browsers that came once never try plain `http` again.
 - **Logs:** method, path, status and time. No query strings, bodies, tokens or IP addresses.
 
 ## MCP over HTTP
@@ -104,9 +107,9 @@ Claude.ai and ChatGPT only connect through OAuth, which is step 3.
 
 The OAuth flow ends on the same login page. `/oauth/authorize` sends people to it, or straight to "Permitir que o Claude leia seus dados do portal?" when they are already logged in; `/oauth/token` exchanges the code (PKCE S256) for an ordinary session token. Client registration through Client ID Metadata Documents and, for clients that still need it, Dynamic Client Registration. No refresh tokens at first: when the session ends, the client sends people through the same screen again.
 
-### 4. Hardening and a small beta
+### 4. Hardening
 
-Turnstile on the login, limits on failed logins per address and per user, a global cap on concurrent requests to the portal. Then a few classmates, before anyone else.
+Turnstile on the login, limits on failed logins per address and per user, a global cap on concurrent requests to the portal. Until then, the Cloudflare rate limit in [Running it](#running-it) is the only limit on logins.
 
 ## Running it
 
@@ -127,10 +130,10 @@ On a server with Docker, behind a [Cloudflare Tunnel](https://developers.cloudfl
    `cloudflared` starts once the app is healthy. Open `PUBLIC_URL`: the start page should say "Este servidor".
 
 4. **Protect the login.** Turn on SSL/TLS > Edge Certificates > Always Use HTTPS (the app sends HSTS, which only works after a first https visit). Then, in Security > WAF:
-   - A rate-limiting rule for `POST /api/sessao`, such as 5 requests a minute per IP, blocking for 10 minutes.
+   - A rate-limiting rule for `POST /api/sessao`, per IP. The free plan only counts over 10 seconds, so it stops bursts, not slow guessing; step 4 covers that.
    - If Bot Fight Mode or a challenge rule is on, skip it for `/mcp`, `/oauth/` and `/.well-known/`.
 
-**Updating:** `git pull && docker compose up -d --build`. Sessions without "Lembrar de mim" end, as on any restart; remembered ones are in the `data` volume and survive.
+**Updating:** `git pull && docker compose up -d --build`, by hand for now. The server runs `main`, not a release. Sessions without "Lembrar de mim" end, as on any restart; remembered ones are in the `data` volume and survive.
 
 **Backups:** the `data` volume holds only `sessions.json`. Losing it logs everyone out, nothing more, so it doesn't need a backup.
 
