@@ -1,5 +1,6 @@
-# Publishes a version tag (v1.2.3, or v1.2.3-beta.0 for a pre-release) to npm and
-# to a GitHub Release with the Claude Desktop bundle. How to cut one: docs/RELEASING.md.
+# Publishes a version tag (v1.2.3, or v1.2.3-beta.0 for a pre-release) to npm, to a
+# GitHub Release with the Claude Desktop bundle, and as the Docker image the hosted
+# server runs. How to cut one: docs/RELEASING.md.
 #
 # npm trusts this workflow by name (Trusted Publishing, set up once on npmjs.com),
 # so no npm token is stored anywhere, and npm attaches a provenance statement
@@ -70,3 +71,29 @@ jobs:
           flags=(--verify-tag --generate-notes)
           if [ "$DIST_TAG" = next ]; then flags+=(--prerelease); fi
           gh release create "$GITHUB_REF_NAME" "$NAME-$VERSION.mcpb" "${flags[@]}"
+
+  # The image the hosted server runs (compose.yaml), tagged with the version and with the
+  # channel: "latest", or "next" for a pre-release. The server pulls "latest" on its own
+  # (deploy/, docs/HOSTING.md), so pushing it is the deploy.
+  image:
+    name: Docker image
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write # push to ghcr.io
+    env:
+      IMAGE: ghcr.io/arthuradrianomm/portal-2
+      CHANNEL: ${{ contains(github.ref_name, '-') && 'next' || 'latest' }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - run: docker build -t "$IMAGE:${GITHUB_REF_NAME#v}" -t "$IMAGE:$CHANNEL" .
+      - run: scripts/docker-smoke.sh "$IMAGE:$CHANNEL"
+
+      - name: Push to the GitHub Container Registry
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          docker push --all-tags "$IMAGE"

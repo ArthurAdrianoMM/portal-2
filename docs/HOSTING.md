@@ -119,21 +119,36 @@ On a server with Docker, behind a [Cloudflare Tunnel](https://developers.cloudfl
 2. **Point a hostname at the app.** In the tunnel's Public Hostnames, add `portal.example.com` with service `HTTP` and URL `app:4321` (the compose service name). Leave the Host header as is: the app checks it against `PUBLIC_URL`.
 
    With the CLI instead: `cloudflared tunnel create portal2`, `cloudflared tunnel route dns portal2 portal.example.com`, and `cloudflared tunnel token portal2` for the token. Such a tunnel has no hostnames of its own; `compose.yaml` already sends everything to the app (`TUNNEL_URL`).
-3. **Configure and start.** Next to `compose.yaml`:
+3. **Configure and start.** The server needs only `compose.yaml` and `.env`; a clone of the repository works too. Next to `compose.yaml`:
 
    ```sh
    cp .env.example .env   # PUBLIC_URL=https://portal.example.com and TUNNEL_TOKEN=…
-   docker compose up -d --build
+   docker compose up -d
    docker compose logs -f app
    ```
 
-   `cloudflared` starts once the app is healthy. Open `PUBLIC_URL`: the start page should say "Este servidor".
+   This runs the newest release's image, `ghcr.io/arthuradrianomm/portal-2:latest`. `cloudflared` starts once the app is healthy. Open `PUBLIC_URL`: the start page should say "Este servidor".
 
 4. **Protect the login.** Turn on SSL/TLS > Edge Certificates > Always Use HTTPS (the app sends HSTS, which only works after a first https visit). Then, in Security > WAF:
    - A rate-limiting rule for `POST /api/sessao`, per IP. The free plan only counts over 10 seconds, so it stops bursts, not slow guessing; step 4 covers that.
    - If Bot Fight Mode or a challenge rule is on, skip it for `/mcp`, `/oauth/` and `/.well-known/`.
 
-**Updating:** `git pull && docker compose up -d --build`, by hand for now. The server runs `main`, not a release. Sessions without "Lembrar de mim" end, as on any restart; remembered ones are in the `data` volume and survive.
+5. **Update on its own.** Each release pushes a new image ([RELEASING.md](RELEASING.md)); a systemd timer on the server pulls it every 5 minutes and restarts the app when it changed. GitHub never connects to the server, and holds none of its secrets. If `compose.yaml` isn't in `/opt/portal2`, change `WorkingDirectory` in the service first.
+
+   ```sh
+   sudo cp deploy/portal2-update.* /etc/systemd/system/
+   sudo systemctl daemon-reload
+   sudo systemctl enable --now portal2-update.timer
+   journalctl -u portal2-update -f    # what each check did
+   ```
+
+**Updating:** cut a release; within 5 minutes of the workflow finishing, the server runs it. Sessions without "Lembrar de mim" end, as on any restart; remembered ones are in the `data` volume and survive. To update right away: `sudo systemctl start portal2-update`.
+
+**Rolling back:** set `PORTAL2_TAG=0.2.0` (the version to go back to) in `.env` and run `docker compose up -d`. The timer then keeps that version. Remove the line to follow releases again.
+
+**Changing `compose.yaml`:** the timer updates the image only. After a change to `compose.yaml` itself, `git pull` (or copy the file) and `docker compose up -d`.
+
+**Trying a change before releasing it:** in a clone, `docker compose up -d --build` builds the checkout instead of pulling. The next check of the timer puts the release back.
 
 **Backups:** the `data` volume holds only `sessions.json`. Losing it logs everyone out, nothing more, so it doesn't need a backup.
 

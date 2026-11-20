@@ -1,0 +1,17 @@
+# Runs the newest released image: pulls compose.yaml's images and restarts what changed.
+# Nothing restarts when the image is the same. Started every few minutes by portal2-update.timer.
+# Install: docs/HOSTING.md ("Updating"). Logs: journalctl -u portal2-update
+[Unit]
+Description=Update portal-2 to the newest released image
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# Where compose.yaml and .env are.
+WorkingDirectory=/opt/portal2
+ExecStart=/usr/bin/docker compose pull --quiet
+ExecStart=/usr/bin/docker compose up -d --no-build
+# The image a pull replaced is left untagged; drop it so old versions don't fill the disk.
+ExecStart=/usr/bin/docker image prune -f

@@ -1,8 +1,8 @@
 # Releasing
 
-npm is the release channel. Every way of running this project on your own computer starts from the npm package: `npx`, a global install, the MCP client configs, and the `.mcpb` bundle attached to each GitHub Release. The hosted server is the exception: it is built from the repository ([HOSTING.md](HOSTING.md#running-it)).
+npm is the release channel. Every way of running this project on your own computer starts from the npm package: `npx`, a global install, the MCP client configs, and the `.mcpb` bundle attached to each GitHub Release. The hosted server runs the same release, as the Docker image `ghcr.io/arthuradrianomm/portal-2`, and updates itself ([HOSTING.md](HOSTING.md#running-it)).
 
-A release is a version tag. Pushing it runs [.github/workflows/release.yml](../.github/workflows/release.yml), which tests, builds, publishes to npm and creates the GitHub Release. Nothing is published from a laptop after the first version.
+A release is a version tag. Pushing it runs [.github/workflows/release.yml](../.github/workflows/release.yml), which tests, builds, publishes to npm, creates the GitHub Release, and pushes the Docker image the hosted server runs. Nothing is published from a laptop after the first version.
 
 ## Cut a release
 
@@ -20,7 +20,7 @@ git push --follow-tags
 3. `version`: regenerates `openapi.json` (it carries the version) and stages it.
 4. Commits as `0.2.0` and tags `v0.2.0`.
 
-The push starts the workflow. Follow it under the repository's **Actions** tab. When it's green, the version is on npm with a provenance badge, and the release page has notes generated from the commits plus `portal-2-<version>.mcpb`.
+The push starts the workflow. Follow it under the repository's **Actions** tab. When it's green, the version is on npm with a provenance badge, the release page has notes generated from the commits plus `portal-2-<version>.mcpb`, and the image is on ghcr.io as `<version>` and `latest`. The hosted server runs it within 5 minutes.
 
 Release notes come from commit subjects, so keep using conventional commits (`feat(mcp): …`, `fix(core): …`). Edit the notes on GitHub afterwards if a release needs a sentence of explanation.
 
@@ -45,7 +45,7 @@ npm version prerelease --preid beta   # 0.3.0-beta.0, then 0.3.0-beta.1, …
 git push --follow-tags
 ```
 
-The workflow publishes it under the npm tag `next`, and marks the GitHub Release as a pre-release. `@latest` doesn't move, so nobody gets it by accident. Try it with `npx portal-2@next serve`. When it's ready, `npm version minor` (or `patch`) releases `0.3.0` to everyone.
+The workflow publishes it under the npm tag `next` and the image tag `next`, and marks the GitHub Release as a pre-release. `@latest` and the image's `latest` don't move, so nobody gets it by accident, the hosted server included. Try it with `npx portal-2@next serve`. When it's ready, `npm version minor` (or `patch`) releases `0.3.0` to everyone.
 
 ## When a release goes wrong
 
@@ -57,7 +57,7 @@ The workflow publishes it under the npm tag `next`, and marks the GitHub Release
 
   Only do this when npm doesn't have the version yet (`npm view portal-2 versions`).
 
-- **It failed after publishing.** Re-run the failed job from the Actions tab. The publish step skips a version npm already has.
+- **It failed after publishing.** Re-run the failed jobs from the Actions tab. The publish step skips a version npm already has, and pushing the image again only replaces it.
 
 - **A published version is broken.** Don't unpublish, and never reuse a version number. Release a fixed patch, then point users away from the broken one:
 
@@ -73,7 +73,7 @@ The workflow publishes it under the npm tag `next`, and marks the GitHub Release
 | `npx portal-2@latest serve` | On its own, the same way. |
 | `npm install -g portal-2` | `npm install -g portal-2@latest`. `serve` prints a notice when a newer release exists ([src/cli/update-check.ts](../src/cli/update-check.ts)). |
 | Claude Desktop (`.mcpb`) | Download the new bundle from the latest GitHub Release and open it. |
-| The hosted server | Whoever runs it: `git pull && docker compose up -d --build`. It runs `main`, so it can be ahead of npm. |
+| The hosted server | On its own: a timer pulls the image's `latest` every 5 minutes ([HOSTING.md](HOSTING.md#running-it)). |
 
 That's why the docs always write `@latest`. After `1.0.0`, `@1` is the safer choice: updates, but never a breaking one.
 
@@ -97,5 +97,7 @@ Done once, by the package owner.
 3. **Turn off token publishing.** Same page, **Publishing access** → *Require two-factor authentication and disallow tokens*. From then on only the workflow can publish.
 
 4. **Protect the tags (optional).** On GitHub, **Settings** → **Rules** → a tag ruleset for `v*` that only you can create, so a collaborator's push can't start a release.
+
+5. **Make the image public.** After the first release with the image, on GitHub open your profile → **Packages** → `portal-2` → **Package settings** → **Change visibility** → Public. The server then pulls it without logging in.
 
 The trusted publisher matches the repository and the workflow file name exactly. Rename either one and npm refuses the publish with a 404 until the setting is updated.

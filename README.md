@@ -238,7 +238,7 @@ npm run probe -- TOTVSEducacional/Periodos 'TOTVSEducacional/DisciplinasAlunoPer
 npm run probe -- TOTVSEducacional/Aluno/CalendarioAluno --values EVENTTYPE,LABEL
 ```
 
-CI runs the typecheck, the tests and the build on every pull request (Node 22, 24 and 26, plus Windows), and builds and smoke-tests the Docker image. Releases are a version tag; see [docs/RELEASING.md](docs/RELEASING.md).
+CI runs the typecheck, the tests and the build on every pull request (Node 22, 24 and 26, plus Windows), and builds and smoke-tests the Docker image. Releases are a version tag: npm, the GitHub Release and the Docker image the hosted server updates itself to; see [docs/RELEASING.md](docs/RELEASING.md).
 
 ## Layout
 
@@ -265,11 +265,12 @@ web/             the web app (React + Vite). Reads /api/openapi.json; knows noth
   src/content/   the Termos de uso and the Política de privacidade: change them when what the server does changes
   src/components/
 scripts/         dev runner (try.ts), shape probe (probe.ts), openapi.json writer, fake-portal servers (fake-serve.ts,
-                 fake-mcp.ts, with demo-portal.ts), Claude Desktop bundle (pack-mcpb.ts)
+                 fake-mcp.ts, with demo-portal.ts), Claude Desktop bundle (pack-mcpb.ts), image smoke test (docker-smoke.sh)
 test/            Vitest, with an in-memory fake portal (test/support) and made-up portal answers (test/fixtures)
 docs/            design notes (MCP.md, HOSTING.md, RELEASING.md)
 brand/           the logo (not wired into the app yet)
 Dockerfile, compose.yaml, .env.example   the hosted server (docs/HOSTING.md)
+deploy/          the systemd timer that keeps the hosted server on the newest release
 ```
 
 ### Adding an endpoint

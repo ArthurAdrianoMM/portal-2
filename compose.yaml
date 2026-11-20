@@ -4,8 +4,10 @@
 
 services:
   app:
+    # Built and pushed by each release (.github/workflows/release.yml). PORTAL2_TAG in .env
+    # pins a version, as 0.2.0; `docker compose up -d --build` builds this checkout instead.
+    image: ghcr.io/arthuradrianomm/portal-2:${PORTAL2_TAG:-latest}
     build: .
-    image: portal-2
     restart: unless-stopped
     environment:
       PUBLIC_URL: ${PUBLIC_URL:?Defina PUBLIC_URL no .env, como https://portal.example.com}
